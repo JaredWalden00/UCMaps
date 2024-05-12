@@ -1,0 +1,225 @@
+﻿@page "/"
+@using GoogleMapsComponents
+@using GoogleMapsComponents.Maps
+
+<div style="position: relative; width: 100%; height: 400px;">
+    <GoogleMap @ref="@map1" Id="map1" Options="@mapOptions" OnAfterInit="@(async () => await OnAfterInitAsync())"></GoogleMap>
+    <div style="position: absolute; top: 10px; left: 10px; z-index: 1000;">
+        <button @onclick="AddMarker">Add marker</button>&nbsp;
+        <button @onclick="RemoveMarker">Remove marker</button>
+    </div>
+</div>
+
+
+@* <MapEventList @ref="@eventList" Events="@_events"></MapEventList> *@
+
+@code {
+    private GoogleMap map1;
+    private MapEventList eventList;
+
+    private MapOptions mapOptions;
+
+    private List<String> _events = new List<String>();
+
+    private bool DisablePoiInfoWindow { get; set; } = false;
+
+    private Stack<Marker> markers = new Stack<Marker>();
+    private string labelText = "";
+
+    private const string BaseUrl = "https://localhost:7165/api/Marker";
+
+    protected override void OnInitialized()
+    {
+        mapOptions = new MapOptions()
+            {
+                Zoom = 13,
+                Center = new LatLngLiteral()
+                {
+                    Lat = 13.505892,
+                    Lng = 100.8162
+                },
+                MapTypeId = MapTypeId.Roadmap,
+                ZoomControl = false,
+                DisableDefaultUI = true
+            };
+
+    }
+
+    private async Task OnAfterInitAsync()
+    {
+        using (var client = new HttpClient())
+        {
+            var responseData = await client.GetFromJsonAsync<List<UCMarker>>(BaseUrl);
+
+            if (responseData != null)
+            {
+                foreach (var ucMarker in responseData)
+                {
+                    // Process each UCMarker object here
+                    // For example, you can call the AddMarker method passing each UCMarker
+                    await AddMarker(ucMarker);
+                }
+            }
+        }
+    }
+
+
+    private async Task AddMarker()
+    {
+        var marker = await Marker.CreateAsync(map1.JsRuntime,
+            new MarkerOptions()
+                {
+                    Position = await map1.InteropObject.GetCenter(),
+                    Map = map1.InteropObject,
+                    Label = new MarkerLabel { Text = $"Test {markers.Count()}", FontWeight = "bold" },
+                    Draggable = true,
+                    Icon = new Icon()
+                    {
+                        Url = "https://developers.google.com/maps/documentation/javascript/examples/full/images/beachflag.png"
+                    }
+                    //Icon = "https://developers.google.com/maps/documentation/javascript/examples/full/images/beachflag.png"
+                });
+
+        var Center = await map1.InteropObject.GetCenter();
+
+        UCMarker newMarker = new UCMarker
+            {
+                Name = "Marker", // You can set the Name to any value you want
+                Lat = Center.Lat,
+                Lng = Center.Lng
+            };
+
+        using (var client = new HttpClient())
+        {
+            var response = await client.PostAsJsonAsync(BaseUrl, newMarker);
+            var responseData = await response.Content.ReadFromJsonAsync<UCMarker>();
+            if (responseData != null)
+            {
+                newMarker = responseData;
+            }
+        }
+
+
+        //await marker.SetMap(map1);
+
+        //var map = await marker.GetMap();
+
+        var icon = await marker.GetIcon();
+
+        Console.WriteLine($"Get icon result type is : {icon.Value.GetType()}");
+
+        icon.Switch(
+            s => Console.WriteLine(s),
+            i => Console.WriteLine(i.Url),
+            _ => { });
+
+        //if (map == map1.InteropObject)
+        //{
+        //    Console.WriteLine("Yess");
+        //}
+        //else
+        //{
+        //    Console.WriteLine("Nooo");
+        //}
+
+        markers.Push(marker);
+        labelText = await marker.GetLabelText();
+
+        await marker.AddListener<MouseEvent>("click", async e =>
+        {
+            string markerLabelText = await marker.GetLabelText();
+            _events.Add("click on " + markerLabelText);
+            StateHasChanged();
+            await e.Stop();
+        });
+        await marker.AddListener<MouseEvent>("dragend", async e => await OnMakerDragEnd(marker, e, newMarker));
+    }
+
+    private async Task AddMarker(UCMarker ucmarker)
+    {
+        LatLngLiteral position = new LatLngLiteral { Lat = ucmarker.Lat, Lng = ucmarker.Lng };
+
+        var marker = await Marker.CreateAsync(map1.JsRuntime,
+            new MarkerOptions()
+                {
+                    Position = position,
+                    Map = map1.InteropObject,
+                    Label = new MarkerLabel { Text = $"Test {markers.Count()}", FontWeight = "bold" },
+                    Draggable = true,
+                    Icon = new Icon()
+                    {
+                        Url = "https://developers.google.com/maps/documentation/javascript/examples/full/images/beachflag.png"
+                    }
+                    //Icon = "https://developers.google.com/maps/documentation/javascript/examples/full/images/beachflag.png"
+                });
+
+
+        //await marker.SetMap(map1);
+
+        //var map = await marker.GetMap();
+
+        var icon = await marker.GetIcon();
+
+        Console.WriteLine($"Get icon result type is : {icon.Value.GetType()}");
+
+        icon.Switch(
+            s => Console.WriteLine(s),
+            i => Console.WriteLine(i.Url),
+            _ => { });
+
+        //if (map == map1.InteropObject)
+        //{
+        //    Console.WriteLine("Yess");
+        //}
+        //else
+        //{
+        //    Console.WriteLine("Nooo");
+        //}
+
+        markers.Push(marker);
+        labelText = await marker.GetLabelText();
+
+        await marker.AddListener<MouseEvent>("click", async e =>
+        {
+            string markerLabelText = await marker.GetLabelText();
+            _events.Add("click on " + markerLabelText);
+            StateHasChanged();
+            await e.Stop();
+        });
+        await marker.AddListener<MouseEvent>("dragend", async e => await OnMakerDragEnd(marker, e, ucmarker));
+    }
+
+    private async Task OnMakerDragEnd(Marker M, MouseEvent e, UCMarker ucmarker)
+    {
+        string markerLabelText = await M.GetLabelText();
+        _events.Insert(0, $"OnMakerDragEnd ({markerLabelText}): ({e.LatLng}).");
+        UCMarker updateMarker = new UCMarker
+            {
+                Id = ucmarker.Id,
+                Name = "Marker", // You can set the Name to any value you want
+                Lat = e.LatLng.Lat,
+                Lng = e.LatLng.Lng
+            };
+        using (var client = new HttpClient())
+        {
+            var response = await client.PutAsJsonAsync(BaseUrl, updateMarker);
+            var responseData = await response.Content.ReadFromJsonAsync<UCMarker>();
+        }
+        StateHasChanged();
+        await e.Stop();
+    }
+
+    private async Task RemoveMarker()
+    {
+        if (!markers.Any())
+        {
+            return;
+        }
+
+        var lastMarker = markers.Pop();
+        await lastMarker.SetMap(null);
+        labelText = markers.Any() ? await markers.Peek().GetLabelText() : "";
+    }
+
+
+}
