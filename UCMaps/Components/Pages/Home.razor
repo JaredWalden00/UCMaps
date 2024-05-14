@@ -30,6 +30,52 @@
         align-items: center;
         cursor: pointer;
     }
+    /* Show animation */
+        .plus-icon-container.show {
+            bottom: 0%;
+    }
+
+    /* Hide animation */
+        .plus-icon-container.hide {
+            bottom: -100%;
+    }
+    /* Style for the button */
+    .add-marker-component {
+        position: fixed;
+        bottom: 10px;
+        right: 10px;
+        z-index: 1000;
+    }
+
+        .add-marker-component i {
+            font-size: 2rem;
+            color: white;
+        }
+
+    /* Style for the container */
+    .add-marker-container {
+        position: fixed;
+        bottom: -100%; /* Initially hides the container */
+        right: 0;
+        left: 0;
+        z-index: 999;
+        transition: bottom 0.5s ease; /* Smooth transition when showing/hiding */
+    }
+
+        /* Show animation */
+        .add-marker-container.show {
+            bottom: 0;
+        }
+
+        /* Hide animation */
+        .add-marker-container.hide {
+            bottom: -100%;
+        }
+
+    /* Style for the content */
+    .add-marker-content {
+        padding: 20px;
+    }
 </style>
 
 <body>
@@ -38,23 +84,16 @@
 
     <!-- Button container -->
         <!-- Use a conditional to show the input field only when adding a marker -->
-        @if (showLabelInput)
-        {
-        <div class="col-12" style="position: absolute;
-        bottom: 10px;
-        right: 10px;
-        z-index: 1000;">
-                <AddMarkerComponent ShowInput="@showLabelInput" OnConfirm="AddMarker"></AddMarkerComponent>
+    <div class="add-marker-component plus-icon-container @($"{(showLabelInput ? "hide" : "side")}")" @onclick="ToggleLabelInput">
+        <i class="bi bi-plus"></i>
+    </div>
+
+
+    <div class="add-marker-container @($"{(showLabelInput ? "show" : "hide")}")">
+        <div class="add-marker-content">
+            <AddMarkerComponent ShowInput="@showLabelInput" OnConfirm="AddMarker"></AddMarkerComponent>
         </div>
-        }
-        else
-        {
-            <div class="button-container">
-            <button class="plus-icon-container" @onclick="ToggleLabelInput">
-                <i class="bi bi-plus"></i>
-            </button>
-            </div>
-        }
+    </div>
 
     <!-- Other content -->
 </body>
