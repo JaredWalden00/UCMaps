@@ -1,0 +1,21 @@
+﻿
+<div class="input-container bg-primary p-3 rounded">
+    <input type="text" class="form-control mb-2" @bind="Label" placeholder="Enter label">
+    <button class="btn btn-light" @onclick="Confirm">Confirm</button>
+</div>
+
+
+@code {
+    [Parameter]
+    public bool ShowInput { get; set; }
+
+    [Parameter]
+    public EventCallback<string> OnConfirm { get; set; }
+
+    private string Label { get; set; }
+
+    private async Task Confirm()
+    {
+        await OnConfirm.InvokeAsync(Label);
+    }
+}

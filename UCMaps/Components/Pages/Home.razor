@@ -1,30 +1,89 @@
 ﻿@page "/"
 @using GoogleMapsComponents
 @using GoogleMapsComponents.Maps
+@using UCMaps.Components.Markers
 
-<div style="position: relative; width: 100%; height: 400px;">
-    <GoogleMap @ref="@map1" Id="map1" Options="@mapOptions" OnAfterInit="@(async () => await OnAfterInitAsync())"></GoogleMap>
-    <div style="position: absolute; top: 10px; left: 10px; z-index: 1000;">
-        <button @onclick="AddMarker">Add marker</button>&nbsp;
-        <button @onclick="RemoveMarker">Remove marker</button>
-    </div>
-</div>
+<style>
+    /* Style to make the map fill the entire viewport */
+
+    /* Style for button container */
+    .button-container {
+        position: absolute;
+        bottom: 10px;
+        right: 10px;
+        z-index: 1000;
+    }
+
+    .bi.bi-plus {
+        font-size: 2rem; /* Adjust the size as needed */
+        color: white; /* Color of the plus icon */
+    }
+
+    /* Style for the blue circle */
+    .plus-icon-container {
+        width: 50px; /* Adjust the size of the circle */
+        height: 50px; /* Adjust the size of the circle */
+        background-color: blue; /* Color of the circle */
+        border-radius: 50%; /* Make it a circle */
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        cursor: pointer;
+    }
+</style>
+
+<body>
+    <!-- Container for the map -->
+    <GoogleMap Height="100vh" @ref="@map1" Id="map1" Options="@mapOptions" OnAfterInit="@(async () => await OnAfterInitAsync())"></GoogleMap>
+
+    <!-- Button container -->
+        <!-- Use a conditional to show the input field only when adding a marker -->
+        @if (showLabelInput)
+        {
+        <div class="col-12" style="position: absolute;
+        bottom: 10px;
+        right: 10px;
+        z-index: 1000;">
+                <AddMarkerComponent ShowInput="@showLabelInput" OnConfirm="AddMarker"></AddMarkerComponent>
+        </div>
+        }
+        else
+        {
+            <div class="button-container">
+            <button class="plus-icon-container" @onclick="ToggleLabelInput">
+                <i class="bi bi-plus"></i>
+            </button>
+            </div>
+        }
+
+    <!-- Other content -->
+</body>
 
 
-@* <MapEventList @ref="@eventList" Events="@_events"></MapEventList> *@
+
+<script>
+    function callBlazorMethod(ucmarkerJson) {
+        DotNet.invokeMethodAsync('UCMaps', 'OnMarkerLabelChange', ucmarkerJson);
+    }
+</script>
+
+
 
 @code {
     private GoogleMap map1;
-    private MapEventList eventList;
 
     private MapOptions mapOptions;
 
     private List<String> _events = new List<String>();
 
     private bool DisablePoiInfoWindow { get; set; } = false;
+    private bool showLabelInput = false;
+    private bool confirmDrag = false;
+    private bool showMarkerComponent = false;
 
     private Stack<Marker> markers = new Stack<Marker>();
     private string labelText = "";
+    private string selectedMarkerName = "";
 
     private const string BaseUrl = "https://localhost:7165/api/Marker";
 
@@ -57,34 +116,41 @@
                 {
                     // Process each UCMarker object here
                     // For example, you can call the AddMarker method passing each UCMarker
-                    await AddMarker(ucMarker);
+                    await AddMarkerFromDB(ucMarker);
                 }
             }
         }
     }
 
-
-    private async Task AddMarker()
+    private void ToggleLabelInput()
     {
+        // Toggle the flag to show/hide the label input field
+        showLabelInput = true;
+    }
+
+    private async Task AddMarker(string label)
+    {
+        // Use the label parameter instead of prompting the user
+        // string label = await GetUserInputLabel("Enter label for the marker:");
+
         var marker = await Marker.CreateAsync(map1.JsRuntime,
             new MarkerOptions()
                 {
                     Position = await map1.InteropObject.GetCenter(),
                     Map = map1.InteropObject,
-                    Label = new MarkerLabel { Text = $"Test {markers.Count()}", FontWeight = "bold" },
+                    Label = new MarkerLabel { Text = label, FontWeight = "bold" },
                     Draggable = true,
                     Icon = new Icon()
                     {
                         Url = "https://developers.google.com/maps/documentation/javascript/examples/full/images/beachflag.png"
                     }
-                    //Icon = "https://developers.google.com/maps/documentation/javascript/examples/full/images/beachflag.png"
                 });
 
         var Center = await map1.InteropObject.GetCenter();
 
         UCMarker newMarker = new UCMarker
             {
-                Name = "Marker", // You can set the Name to any value you want
+                Name = label,
                 Lat = Center.Lat,
                 Lng = Center.Lng
             };
@@ -99,43 +165,28 @@
             }
         }
 
-
-        //await marker.SetMap(map1);
-
-        //var map = await marker.GetMap();
-
-        var icon = await marker.GetIcon();
-
-        Console.WriteLine($"Get icon result type is : {icon.Value.GetType()}");
-
-        icon.Switch(
-            s => Console.WriteLine(s),
-            i => Console.WriteLine(i.Url),
-            _ => { });
-
-        //if (map == map1.InteropObject)
-        //{
-        //    Console.WriteLine("Yess");
-        //}
-        //else
-        //{
-        //    Console.WriteLine("Nooo");
-        //}
-
         markers.Push(marker);
         labelText = await marker.GetLabelText();
+        showLabelInput = false;
 
         await marker.AddListener<MouseEvent>("click", async e =>
         {
             string markerLabelText = await marker.GetLabelText();
-            _events.Add("click on " + markerLabelText);
+            showMarkerComponent = true;
+            selectedMarkerName = label;
             StateHasChanged();
             await e.Stop();
         });
-        await marker.AddListener<MouseEvent>("dragend", async e => await OnMakerDragEnd(marker, e, newMarker));
+        await marker.AddListener<MouseEvent>("dragend", async e =>
+        {
+            await OnMakerDragEnd(marker, e, newMarker);
+            // Make the marker undraggable after it's dragged once
+            showLabelInput = true;
+        });
     }
 
-    private async Task AddMarker(UCMarker ucmarker)
+
+    private async Task AddMarkerFromDB(UCMarker ucmarker)
     {
         LatLngLiteral position = new LatLngLiteral { Lat = ucmarker.Lat, Lng = ucmarker.Lng };
 
@@ -144,8 +195,8 @@
                 {
                     Position = position,
                     Map = map1.InteropObject,
-                    Label = new MarkerLabel { Text = $"Test {markers.Count()}", FontWeight = "bold" },
-                    Draggable = true,
+                    Label = new MarkerLabel { Text = ucmarker.Name, FontWeight = "bold" },
+                    Draggable = false,
                     Icon = new Icon()
                     {
                         Url = "https://developers.google.com/maps/documentation/javascript/examples/full/images/beachflag.png"
@@ -181,13 +232,38 @@
 
         await marker.AddListener<MouseEvent>("click", async e =>
         {
-            string markerLabelText = await marker.GetLabelText();
-            _events.Add("click on " + markerLabelText);
+            showMarkerComponent = true;
+            selectedMarkerName = ucmarker.Name;
             StateHasChanged();
             await e.Stop();
         });
-        await marker.AddListener<MouseEvent>("dragend", async e => await OnMakerDragEnd(marker, e, ucmarker));
+        //await marker.AddListener<MouseEvent>("dragend", async e => await OnMakerDragEnd(marker, e, ucmarker));
     }
+
+    // Define a C# method to serialize the UCMarker object to JSON
+    string SerializeUCMarkerToJSON(UCMarker ucmarker)
+    {
+        return System.Text.Json.JsonSerializer.Serialize(ucmarker);
+    }
+
+    [JSInvokable]
+    public async Task OnMarkerLabelChange(UCMarker ucmarker)
+    {
+        UCMarker updateMarker = new UCMarker
+            {
+                Id = ucmarker.Id,
+                Name = ucmarker.Name, // You can set the Name to any value you want
+                Lat = ucmarker.Lat,
+                Lng = ucmarker.Lng
+            };
+        using (var client = new HttpClient())
+        {
+            var response = await client.PutAsJsonAsync(BaseUrl, updateMarker);
+            var responseData = await response.Content.ReadFromJsonAsync<UCMarker>();
+        }
+        StateHasChanged();
+    }
+
 
     private async Task OnMakerDragEnd(Marker M, MouseEvent e, UCMarker ucmarker)
     {
@@ -196,7 +272,7 @@
         UCMarker updateMarker = new UCMarker
             {
                 Id = ucmarker.Id,
-                Name = "Marker", // You can set the Name to any value you want
+                Name = ucmarker.Name, // You can set the Name to any value you want
                 Lat = e.LatLng.Lat,
                 Lng = e.LatLng.Lng
             };
