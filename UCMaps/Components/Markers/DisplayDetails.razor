@@ -1,0 +1,39 @@
+﻿@* <!-- Display the Razor component -->
+<style>
+    .display-marker-container {
+/*         position: fixed; */
+        top: 100%; /* Initially hides the container */
+        right: 0;
+        left: 0;
+        z-index: 999;
+    }
+
+        /* Show animation */
+
+    /* Style for the content */
+    .display-marker-content {
+        padding: 20px;
+    }
+</style> *@
+
+<div class="row">
+    </div>
+    <p>@Desc</p>
+    <div class="row">
+        <div class="col-6">
+    <button class="btn btn-dark" >Still There</button>
+    </div>
+        <div class="col-6">
+            <button class="btn btn-dark">Not There</button>
+        </div>
+</div>
+
+
+@code {
+    [Parameter]
+    public string MarkerLabel { get; set; }
+
+    [Parameter]
+    public string Desc { get; set; }
+}
+

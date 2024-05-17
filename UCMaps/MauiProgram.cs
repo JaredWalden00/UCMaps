@@ -15,12 +15,12 @@ namespace UCMaps
                 });
 
             builder.Services.AddMauiBlazorWebView();
-
+            builder.Services.AddBlazorBootstrap();
+            //builder.Services.AddHttpClient("api", httpClient=>httpClient.BaseAddress == "");
 #if DEBUG
-    		builder.Services.AddBlazorWebViewDeveloperTools();
+            builder.Services.AddBlazorWebViewDeveloperTools();
     		builder.Logging.AddDebug();
 #endif
-
             return builder.Build();
         }
     }

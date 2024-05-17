@@ -1,7 +1,13 @@
 ﻿@page "/"
 @using GoogleMapsComponents
 @using GoogleMapsComponents.Maps
+@using Microsoft.JSInterop
 @using UCMaps.Components.Markers
+@using System.Net.Http.Json;
+@using System.Net.Http;
+@using Newtonsoft.Json;
+@using System.Text;
+@using BlazorBootstrap;
 
 <style>
     /* Style to make the map fill the entire viewport */
@@ -76,25 +82,61 @@
     .add-marker-content {
         padding: 20px;
     }
+
+    /* Style for the container */
+    .display-marker-container {
+        position: fixed;
+        top: 100%; /* Initially hides the container */
+        right: 0;
+        left: 0;
+        z-index: 999;
+        transition: top 0.5s ease; /* Smooth transition when showing/hiding */
+    }
+
+        /* Show animation */
+        .display-marker-container.show {
+            top: 0;
+        }
+
+        /* Hide animation */
+        .display-marker-container.hide {
+            top: -100%;
+        }
+
+    /* Style for the content */
+    .display-marker-content {
+        padding: 20px;
+    }
 </style>
 
 <body>
+@*     <div style="width: 100%; height: 100%;" @onclick="ToggleMarkerComponent"> *@
     <!-- Container for the map -->
     <GoogleMap Height="100vh" @ref="@map1" Id="map1" Options="@mapOptions" OnAfterInit="@(async () => await OnAfterInitAsync())"></GoogleMap>
 
+    @* <div class="display-marker-container @($"{(showMarker ? "show" : "hide")}")">
+        <div class="display-marker-content">
+            <DisplayDetails MarkerLabel="@selectedMarkerName"></DisplayDetails>
+        </div>
+    </div> *@
+
+    <Modal @ref="displayModal" />
+
+    <Modal @ref="addModal" />
+
     <!-- Button container -->
         <!-- Use a conditional to show the input field only when adding a marker -->
-    <div class="add-marker-component plus-icon-container @($"{(showLabelInput ? "hide" : "side")}")" @onclick="ToggleLabelInput">
+    <div class="add-marker-component plus-icon-container @($"{(showLabelInput ? "hide" : "side")}")" @onclick="ShowAddMarkerComponent">
         <i class="bi bi-plus"></i>
     </div>
 
 
-    <div class="add-marker-container @($"{(showLabelInput ? "show" : "hide")}")">
+   @*  <div class="add-marker-container @($"{(showLabelInput ? "show" : "hide")}")">
         <div class="add-marker-content">
             <AddMarkerComponent ShowInput="@showLabelInput" OnConfirm="AddMarker"></AddMarkerComponent>
         </div>
-    </div>
-
+    </div>  *@
+@*     </div> *@
     <!-- Other content -->
 </body>
 
@@ -117,6 +159,7 @@
 
     private bool DisablePoiInfoWindow { get; set; } = false;
     private bool showLabelInput = false;
+    private bool showMarker = false;
     private bool confirmDrag = false;
     private bool showMarkerComponent = false;
 
@@ -124,17 +167,32 @@
     private string labelText = "";
     private string selectedMarkerName = "";
 
-    private const string BaseUrl = "https://localhost:7165/api/Marker";
+    private const string BaseUrl = "http://10.0.2.2:5078/api/Marker";
+    private Modal addModal = default!;
+    private Modal displayModal = default!;
+
+    private string description = "";
+
+    private async Task ConfirmAddMarker()
+    {
+        if (!string.IsNullOrWhiteSpace(labelText))
+        {
+            await AddMarker(labelText, description);
+            labelText = ""; // Clear the label text after adding the marker
+            description = ""; // Clear the description after adding the marker
+        }
+        await addModal.HideAsync();
+    }
 
     protected override void OnInitialized()
     {
         mapOptions = new MapOptions()
             {
-                Zoom = 13,
+                Zoom = 16,
                 Center = new LatLngLiteral()
                 {
-                    Lat = 13.505892,
-                    Lng = 100.8162
+                    Lat = 39.133459,
+                    Lng = -84.515086
                 },
                 MapTypeId = MapTypeId.Roadmap,
                 ZoomControl = false,
@@ -142,6 +200,32 @@
             };
 
     }
+
+    private async Task ShowMarkerComponent(string name, string desc)
+    {
+        var parameters = new Dictionary<string, object>();
+        parameters.Add("MarkerLabel", name);
+        parameters.Add("Desc", desc);
+        await displayModal.ShowAsync<DisplayDetails>(title: name, parameters: parameters);
+    }
+
+    private async Task ShowAddMarkerComponent()
+    {
+        var parameters = new Dictionary<string, object>();
+        parameters.Add("OnDataSent", EventCallback.Factory.Create<Tuple<string, string>>(this, HandleDataFromChild)); // Set the event callback
+        await addModal.ShowAsync<AddMarkerComponent>(title: "Add Marker", parameters: parameters);
+    }
+
+    private async void HandleDataFromChild(Tuple<string, string> data)
+    {
+        await addModal.HideAsync();
+        // Access the data here
+        var label = data.Item1;
+        var description = data.Item2;
+        // Do something with the data
+        await AddMarker(label, description);
+    }
+
 
     private async Task OnAfterInitAsync()
     {
@@ -167,7 +251,16 @@
         showLabelInput = true;
     }
 
-    private async Task AddMarker(string label)
+    private void ToggleMarkerComponent()
+    {
+        if (showMarker)
+        {
+            showMarker = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task AddMarker(string label, string desc)
     {
         // Use the label parameter instead of prompting the user
         // string label = await GetUserInputLabel("Enter label for the marker:");
@@ -179,10 +272,15 @@
                     Map = map1.InteropObject,
                     Label = new MarkerLabel { Text = label, FontWeight = "bold" },
                     Draggable = true,
-                    Icon = new Icon()
+                    Icon = new GoogleMapsComponents.Maps.Symbol()
                     {
-                        Url = "https://developers.google.com/maps/documentation/javascript/examples/full/images/beachflag.png"
-                    }
+                        // Use a green circle SVG for the marker icon
+
+                        FillColor = "Red",
+                        FillOpacity = 1, // Fully opaque
+                        StrokeColor = "transparent", // No stroke
+                        Path = "M-20,0a20,20 0 1,0 40,0a20,20 0 1,0 -40,0",
+                    },
                 });
 
         var Center = await map1.InteropObject.GetCenter();
@@ -190,6 +288,7 @@
         UCMarker newMarker = new UCMarker
             {
                 Name = label,
+                Description = desc,
                 Lat = Center.Lat,
                 Lng = Center.Lng
             };
@@ -207,12 +306,15 @@
         markers.Push(marker);
         labelText = await marker.GetLabelText();
         showLabelInput = false;
+        StateHasChanged();
 
         await marker.AddListener<MouseEvent>("click", async e =>
         {
             string markerLabelText = await marker.GetLabelText();
             showMarkerComponent = true;
             selectedMarkerName = label;
+            await ShowMarkerComponent(label, desc);
+            showMarker = true;
             StateHasChanged();
             await e.Stop();
         });
@@ -234,12 +336,22 @@
                 {
                     Position = position,
                     Map = map1.InteropObject,
-                    Label = new MarkerLabel { Text = ucmarker.Name, FontWeight = "bold" },
-                    Draggable = false,
-                    Icon = new Icon()
+                    Label = new MarkerLabel
                     {
-                        Url = "https://developers.google.com/maps/documentation/javascript/examples/full/images/beachflag.png"
-                    }
+                        Text = ucmarker.Name,
+                        FontWeight = "bold",
+                        ClassName = "white-shadow-label"
+                    },
+                    Draggable = true,
+                    Icon = new GoogleMapsComponents.Maps.Symbol()
+                    {
+                        // Use a green circle SVG for the marker icon
+                        
+                        FillColor = "Red",
+                        FillOpacity = 1, // Fully opaque
+                        StrokeColor = "transparent", // No stroke
+                        Path = "M-20,0a20,20 0 1,0 40,0a20,20 0 1,0 -40,0",
+                    },
                     //Icon = "https://developers.google.com/maps/documentation/javascript/examples/full/images/beachflag.png"
                 });
 
@@ -248,14 +360,14 @@
 
         //var map = await marker.GetMap();
 
-        var icon = await marker.GetIcon();
+        // var icon = await marker.GetIcon();
 
-        Console.WriteLine($"Get icon result type is : {icon.Value.GetType()}");
+        // Console.WriteLine($"Get icon result type is : {icon.Value.GetType()}");
 
-        icon.Switch(
-            s => Console.WriteLine(s),
-            i => Console.WriteLine(i.Url),
-            _ => { });
+        // icon.Switch(
+        //     s => Console.WriteLine(s),
+        //     i => Console.WriteLine(i.Url),
+        //     _ => { });
 
         //if (map == map1.InteropObject)
         //{
@@ -273,6 +385,8 @@
         {
             showMarkerComponent = true;
             selectedMarkerName = ucmarker.Name;
+            await ShowMarkerComponent(ucmarker.Name, ucmarker.Description);
+            showMarker = true;
             StateHasChanged();
             await e.Stop();
         });
@@ -336,5 +450,11 @@
         labelText = markers.Any() ? await markers.Peek().GetLabelText() : "";
     }
 
+    [JSInvokable]
+    public async Task HideDisplayMarker()
+    {
+        showMarker = false;
+        StateHasChanged();
+    }
 
 }
