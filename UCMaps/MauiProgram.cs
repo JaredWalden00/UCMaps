@@ -1,4 +1,7 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using Auth0.OidcClient;
+using Microsoft.AspNetCore.Components.Authorization;
+using Microsoft.Extensions.Logging;
+using UCMaps.UCMaps;
 
 namespace UCMaps
 {
@@ -16,7 +19,21 @@ namespace UCMaps
 
             builder.Services.AddMauiBlazorWebView();
             builder.Services.AddBlazorBootstrap();
-            //builder.Services.AddHttpClient("api", httpClient=>httpClient.BaseAddress == "");
+            builder.Services.AddAuthorizationCore();
+            builder.Services.AddScoped<AuthenticationStateProvider, CustomAuthStateProvider>();
+            builder.Services.AddScoped<IAuthService, CustomAuthStateProvider>();
+
+            string apiBaseAddress;
+#if ANDROID
+            apiBaseAddress = "http://10.0.2.2:5078"; // Android emulator loopback address
+#else
+            apiBaseAddress = "http://localhost:5078"; // Use localhost for other platforms
+#endif
+
+            builder.Services.AddHttpClient("api", httpClient =>
+            {
+                httpClient.BaseAddress = new Uri(apiBaseAddress);
+            });
 #if DEBUG
             builder.Services.AddBlazorWebViewDeveloperTools();
     		builder.Logging.AddDebug();

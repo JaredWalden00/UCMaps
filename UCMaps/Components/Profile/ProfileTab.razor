@@ -1,0 +1,22 @@
+﻿@inherits LayoutComponentBase
+@inject IAuthService AuthService
+@inject NavigationManager NavManager
+@inject AuthenticationStateProvider AuthStateProvider
+@using Components.Models.DTO
+@using global::UCMaps.UCMaps
+
+<AuthorizeView>
+   <Authorized>
+   </Authorized>
+    <NotAuthorized>
+        <LoginForm OnLoginSuccess="HandleLoginSuccess" />
+    </NotAuthorized>
+</AuthorizeView>
+
+@code {
+    private async Task HandleLoginSuccess()
+    {
+        await AuthService.GetAuthenticationStateAsync();
+        StateHasChanged();
+    }
+}

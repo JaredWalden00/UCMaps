@@ -1,0 +1,20 @@
+﻿<style>
+    .bottom-left-button {
+        position: fixed;
+        bottom: 20px;
+        left: 20px;
+        padding: 10px 20px;
+        background-color: #007bff;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+    }
+</style>
+
+<button class="bottom-left-button" @onclick="OnClick">Click me!</button>
+
+@code {
+    [Parameter]
+    public EventCallback OnClick { get; set; }
+}

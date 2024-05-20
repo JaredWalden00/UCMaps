@@ -1,0 +1,47 @@
+﻿@inherits LayoutComponentBase
+@inject IAuthService AuthService
+@inject NavigationManager NavManager
+@using Components.Models.DTO
+@using global::UCMaps.UCMaps
+
+<h3>Login</h3>
+
+<EditForm Model="user" OnSubmit="HandleLogin">
+    <div class="row">
+        <label for="username">Name</label>
+        <InputText id="username" @bind-Value="username" />
+    </div>
+    <div class="row">
+        <label for="password">Password</label>
+        <InputText id="password" @bind-Value="password" type="password" />
+    </div>
+    <button type="submit" class="btn btn-primary">Login</button>
+</EditForm>
+
+<p style="color: white;">Don't have an account? <a href="/register" style="color: white;">Register</a></p>
+
+@code {
+    private UserLoginDto user = new UserLoginDto();
+    private string username { get; set; } = string.Empty;
+    private string password { get; set; } = string.Empty;
+    [Parameter]
+    public EventCallback OnLoginSuccess { get; set; }
+
+    protected override void OnInitialized()
+    {
+        
+    }
+
+    async Task HandleLogin()
+    {
+        var serviceResponse = await AuthService.Login(username, password);
+        if (serviceResponse.Success)
+        {
+            await OnLoginSuccess.InvokeAsync();
+        }
+        else
+        {
+            // Handle login failure (e.g., display an error message)
+        }
+    }
+}

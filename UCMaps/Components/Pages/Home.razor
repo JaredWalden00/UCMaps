@@ -2,12 +2,15 @@
 @using GoogleMapsComponents
 @using GoogleMapsComponents.Maps
 @using Microsoft.JSInterop
-@using UCMaps.Components.Markers
+@using Components.Markers
 @using System.Net.Http.Json;
 @using System.Net.Http;
 @using Newtonsoft.Json;
 @using System.Text;
 @using BlazorBootstrap;
+@using Components
+@using Components.Markers
+@using Components.Profile
 
 <style>
     /* Style to make the map fill the entire viewport */
@@ -107,6 +110,7 @@
     .display-marker-content {
         padding: 20px;
     }
+
 </style>
 
 <body>
@@ -119,6 +123,10 @@
             <DisplayDetails MarkerLabel="@selectedMarkerName"></DisplayDetails>
         </div>
     </div> *@
+
+    <Modal @ref="profileTab" />
+
+    <LoginButton OnClick="ProfileTab" />
 
     <Modal @ref="displayModal" />
 
@@ -167,9 +175,17 @@
     private string labelText = "";
     private string selectedMarkerName = "";
 
+    //https://stackoverflow.com/questions/72313635/net-maui-android-cant-talk-to-api-localhost
+
+#if ANDROID
     private const string BaseUrl = "http://10.0.2.2:5078/api/Marker";
+#else
+    private const string BaseUrl = "http://localhost:5078/api/Marker";
+#endif
+
     private Modal addModal = default!;
     private Modal displayModal = default!;
+    private Modal profileTab = default!;
 
     private string description = "";
 
@@ -209,6 +225,10 @@
         await displayModal.ShowAsync<DisplayDetails>(title: name, parameters: parameters);
     }
 
+    private async Task ProfileTab()
+    {
+        await addModal.ShowAsync<ProfileTab>(title: "Profile");
+    }
     private async Task ShowAddMarkerComponent()
     {
         var parameters = new Dictionary<string, object>();
