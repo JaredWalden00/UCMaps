@@ -1,0 +1,27 @@
+﻿@* <h3>Register</h3>
+
+@code {
+    public async Task<ServiceResponse<string>> Register(string username, string password)
+    {
+        var data = new { Username = username, Password = password };
+        var response = await _http.PostAsJsonAsync("Auth/Register", data);
+        var serviceResponse = new ServiceResponse<string>();
+
+        if (response.IsSuccessStatusCode)
+        {
+            var token = await response.Content.ReadAsStringAsync();
+            serviceResponse.Data = token;
+            serviceResponse.Success = true;
+            SetToken(token);
+            NotifyAuthenticationStateChanged(GetAuthenticationStateAsync());
+        }
+        else
+        {
+            serviceResponse.Success = false;
+            serviceResponse.Message = "Registration failed. Please check your credentials.";
+        }
+
+        return serviceResponse;
+    }
+}
+ *@

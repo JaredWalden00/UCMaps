@@ -23,8 +23,7 @@
 
     async Task HandleLogin()
     {
-        // var serviceResponse = await AuthService.Login(username, password);
+        //var serviceResponse = await AuthService.Login(username, password);
         await AuthStateProvider.GetAuthenticationStateAsync();
-        NavManager.NavigateTo("/");
     }
 }

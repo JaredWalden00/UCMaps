@@ -1,7 +1,6 @@
 ﻿using Auth0.OidcClient;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.Extensions.Logging;
-using UCMaps.UCMaps;
 
 namespace UCMaps
 {
@@ -21,8 +20,7 @@ namespace UCMaps
             builder.Services.AddBlazorBootstrap();
             builder.Services.AddAuthorizationCore();
             builder.Services.AddScoped<AuthenticationStateProvider, CustomAuthStateProvider>();
-            builder.Services.AddScoped<IAuthService, CustomAuthStateProvider>();
-
+            
             string apiBaseAddress;
 #if ANDROID
             apiBaseAddress = "http://10.0.2.2:5078"; // Android emulator loopback address
