@@ -11,7 +11,6 @@
 
 <h3>Login</h3>
 
-<EditForm Model="user" OnSubmit="HandleLogin">
     <div class="row">
         <label for="username">Name</label>
         <InputText id="username" @bind-Value="username" />
@@ -20,8 +19,8 @@
         <label for="password">Password</label>
         <InputText id="password" @bind-Value="password" type="password" />
     </div>
-    <button type="submit" class="btn btn-primary">Login</button>
-</EditForm>
+    <button clas="btn btn-primary" @onclick="HandleLogin">Login</button>
+    <button class="btn btn-primary" @onclick="HandleRegister">Register</button>
 
 <p style="color: white;">Don't have an account? <a href="/register" style="color: white;">Register</a></p>
 
@@ -50,6 +49,22 @@
 
         return serviceResponse;
     }
+
+    public async Task<ServiceResponse<string>> HandleRegister()
+    {
+        var userLoginDto = new UserLoginDto { Username = username, Password = password };
+        var response = await httpClient.PostAsJsonAsync("http://localhost:5078/Auth/Register", userLoginDto);
+        var content = await response.Content.ReadAsStringAsync();
+        var serviceResponse = JsonConvert.DeserializeObject<ServiceResponse<string>>(content);
+
+        if (serviceResponse.Success)
+        {
+            await HandleLogin();
+        }
+
+        return serviceResponse;
+    }
+
     private UserSession GetUserClaims(string token)
     {
         var handler = new JwtSecurityTokenHandler();

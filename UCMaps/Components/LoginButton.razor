@@ -1,18 +1,23 @@
 ﻿<style>
-    .bottom-left-button {
+    .top-left-button {
         position: fixed;
-        bottom: 20px;
+        top: 20px;
         left: 20px;
-        padding: 10px 20px;
+        width: 50px; /* Set width */
+        height: 50px; /* Set height to be equal to width */
         background-color: #007bff;
         color: white;
         border: none;
-        border-radius: 5px;
-        cursor: pointer;
+        border-radius: 50%; /* Make it a perfect circle */
+        display: flex;
+        justify-content: center;
+        align-items: center;
     }
 </style>
 
-<button class="bottom-left-button" @onclick="OnClick">Click me!</button>
+<button class="top-left-button" @onclick="OnClick">
+    <i class="bi bi-list"></i>
+</button>
 
 @code {
     [Parameter]

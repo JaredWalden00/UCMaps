@@ -11,6 +11,7 @@
 @using Components
 @using Components.Markers
 @using Components.Profile
+@inject IHttpClientFactory HttpClientFactory
 
 <style>
     /* Style to make the map fill the entire viewport */
@@ -313,15 +314,15 @@
                 Lng = Center.Lng
             };
 
-        using (var client = new HttpClient())
-        {
-            var response = await client.PostAsJsonAsync(BaseUrl, newMarker);
-            var responseData = await response.Content.ReadFromJsonAsync<UCMarker>();
+        var httpClient = HttpClientFactory.CreateClient("api");
+        var response = await httpClient.PostAsJsonAsync("api/Marker", newMarker);
+        response.EnsureSuccessStatusCode();
+        var responseData = await response.Content.ReadFromJsonAsync<UCMarker>();
             if (responseData != null)
             {
                 newMarker = responseData;
             }
-        }
+        
 
         markers.Push(marker);
         labelText = await marker.GetLabelText();
