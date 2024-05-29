@@ -1,6 +1,7 @@
 ﻿using GoogleMapsComponents.Maps;
 using OneOf;
 using System.Text.Json.Serialization;
+using UCMaps.Components.Models;
 
 public class UCMarker
 {
@@ -9,5 +10,6 @@ public class UCMarker
     public string Description { get; set; }
     public double Lat { get; set; }
     public double Lng { get; set; }
+    public UserSession User { get; set; }
     //public OneOf<string, MarkerLabel>? Label { get; set; }
 }

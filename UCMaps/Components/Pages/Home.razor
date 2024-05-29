@@ -11,7 +11,13 @@
 @using Components
 @using Components.Markers
 @using Components.Profile
+@inject AuthenticationStateProvider AuthenticationStateProvider
 @inject IHttpClientFactory HttpClientFactory
+@using System;
+@using System.Net.Http;
+@using System.Net.Http.Headers;
+@using System.Threading.Tasks;
+@using System.Security.Claims
 
 <style>
     /* Style to make the map fill the entire viewport */
@@ -175,6 +181,7 @@
     private Stack<Marker> markers = new Stack<Marker>();
     private string labelText = "";
     private string selectedMarkerName = "";
+    private string userId;
 
     //https://stackoverflow.com/questions/72313635/net-maui-android-cant-talk-to-api-localhost
 
@@ -250,20 +257,64 @@
 
     private async Task OnAfterInitAsync()
     {
-        using (var client = new HttpClient())
-        {
-            var responseData = await client.GetFromJsonAsync<List<UCMarker>>(BaseUrl);
 
-            if (responseData != null)
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        if (user.Identity.IsAuthenticated)
+        {
+            userId = user.FindFirst(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
+        }
+
+        var httpClient = HttpClientFactory.CreateClient("api");
+
+        // You can inspect this for debugging, but it should be set by AuthHeaderHandler
+        var auth = httpClient.DefaultRequestHeaders.Authorization;
+
+        var responseData = await httpClient.GetFromJsonAsync<List<UCMarker>>("api/Marker");
+
+        if (responseData != null)
+        {
+            foreach (var ucMarker in responseData)
             {
-                foreach (var ucMarker in responseData)
-                {
-                    // Process each UCMarker object here
-                    // For example, you can call the AddMarker method passing each UCMarker
-                    await AddMarkerFromDB(ucMarker);
-                }
+                // Process each UCMarker object here
+                // For example, you can call the AddMarker method passing each UCMarker
+                await AddMarkerFromDB(ucMarker);
             }
         }
+
+        // using (HttpClient client = new HttpClient())
+        // {
+        //     // Set the base address of the API
+        //     client.BaseAddress = new Uri("https://localhost:7165");
+
+        //     // Set the Accept header to text/plain
+        //     client.DefaultRequestHeaders.Accept.Clear();
+        //     client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("text/plain"));
+
+        //     // Set the Authorization header with the bearer token
+        //     string token = "eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJuYW1laWQiOiIxIiwidW5pcXVlX25hbWUiOiJKYXJlZCIsIm5iZiI6MTcxNjkzOTk1MywiZXhwIjoxNzE3MDI2MzUzLCJpYXQiOjE3MTY5Mzk5NTN9.GKolaqzSn6FScRR7TxzDa83Vb_msbJdP0mftP4LvFNoJw8CVfl_TNhvOznjZfuNzkj_11gs67mrrRBRwYkdCEQ";
+        //     client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+        //     try
+        //     {
+        //         // Send the GET request
+        //         HttpResponseMessage response = await client.GetAsync("/api/Marker");
+
+        //         // Ensure the request was successful
+        //         response.EnsureSuccessStatusCode();
+
+        //         // Read the response content
+        //         string responseBody = await response.Content.ReadAsStringAsync();
+        //         Console.WriteLine(responseBody);
+        //     }
+        //     catch (HttpRequestException e)
+        //     {
+        //         // Handle the exception
+        //         Console.WriteLine($"Request error: {e.Message}");
+        //     }
+        // }
+
     }
 
     private void ToggleLabelInput()
@@ -318,11 +369,11 @@
         var response = await httpClient.PostAsJsonAsync("api/Marker", newMarker);
         response.EnsureSuccessStatusCode();
         var responseData = await response.Content.ReadFromJsonAsync<UCMarker>();
-            if (responseData != null)
-            {
-                newMarker = responseData;
-            }
-        
+        if (responseData != null)
+        {
+            newMarker = responseData;
+        }
+
 
         markers.Push(marker);
         labelText = await marker.GetLabelText();
@@ -352,6 +403,8 @@
     {
         LatLngLiteral position = new LatLngLiteral { Lat = ucmarker.Lat, Lng = ucmarker.Lng };
 
+        bool drag = ucmarker.User.Id.ToString() == userId;
+
         var marker = await Marker.CreateAsync(map1.JsRuntime,
             new MarkerOptions()
                 {
@@ -363,11 +416,11 @@
                         FontWeight = "bold",
                         ClassName = "white-shadow-label"
                     },
-                    Draggable = true,
+                    Draggable = drag,
                     Icon = new GoogleMapsComponents.Maps.Symbol()
                     {
                         // Use a green circle SVG for the marker icon
-                        
+
                         FillColor = "Red",
                         FillOpacity = 1, // Fully opaque
                         StrokeColor = "transparent", // No stroke
@@ -402,6 +455,7 @@
         markers.Push(marker);
         labelText = await marker.GetLabelText();
 
+
         await marker.AddListener<MouseEvent>("click", async e =>
         {
             showMarkerComponent = true;
@@ -411,7 +465,11 @@
             StateHasChanged();
             await e.Stop();
         });
-        //await marker.AddListener<MouseEvent>("dragend", async e => await OnMakerDragEnd(marker, e, ucmarker));
+
+        if (ucmarker.User.Id.ToString() == userId)
+        {
+            await marker.AddListener<MouseEvent>("dragend", async e => await OnMakerDragEnd(marker, e, ucmarker));
+        }
     }
 
     // Define a C# method to serialize the UCMarker object to JSON

@@ -14,14 +14,14 @@ namespace UCMaps
 {
     public class CustomAuthStateProvider : AuthenticationStateProvider
     {
-        private readonly HttpClient _http;
+        private readonly IHttpClientFactory _httpClientFactory;
         private readonly IConfiguration _configuration;
         private readonly IServiceProvider _serviceProvider;
         private ClaimsPrincipal anonymous = new ClaimsPrincipal(new ClaimsIdentity());
 
-        public CustomAuthStateProvider(HttpClient http, IConfiguration configuration, IServiceProvider serviceProvider)
+        public CustomAuthStateProvider(IHttpClientFactory httpClientFactory, IConfiguration configuration, IServiceProvider serviceProvider)
         {
-            _http = http;
+            _httpClientFactory = httpClientFactory;
             _configuration = configuration;
             _serviceProvider = serviceProvider;
         }
@@ -30,42 +30,24 @@ namespace UCMaps
         {
             try
             {
-                // Get UserSession from secure storage
                 string getUserSessionFromStorage = await SecureStorage.Default.GetAsync("UserSession");
                 if (string.IsNullOrEmpty(getUserSessionFromStorage))
-                    return await Task.FromResult(new AuthenticationState(anonymous));
+                    return new AuthenticationState(anonymous);
 
-                // Deserialize into a UserSession object
                 var deserializedUserSession = JsonSerializer.Deserialize<UserSession>(getUserSessionFromStorage);
-                var claimsPrincipal = new ClaimsPrincipal(new ClaimsIdentity(new List<Claim>
-                {
-                    new Claim(ClaimTypes.Name, deserializedUserSession.Username)
-                }, "CustomAuth"));
+                var claims = new List<Claim>
+            {
+                new Claim(ClaimTypes.Name, deserializedUserSession.Username),
+                new Claim("access_token", deserializedUserSession.Token),
+                new Claim(ClaimTypes.NameIdentifier, deserializedUserSession.Id.ToString())
+            };
+                var claimsPrincipal = new ClaimsPrincipal(new ClaimsIdentity(claims, "CustomAuth"));
 
-                // Set token for HttpClient header
-                var httpClient = _serviceProvider.GetRequiredService<IHttpClientFactory>().CreateClient("api");
-                httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", deserializedUserSession.Token);
-
-                UCMarker newMarker = new UCMarker
-                {
-                    Name = "meep",
-                    Description = "meep",
-                    Lat = 0,
-                    Lng = 2
-                };
-
-                var response = await httpClient.PostAsJsonAsync("api/Marker", newMarker);
-                response.EnsureSuccessStatusCode();
-                var responseData = await response.Content.ReadFromJsonAsync<UCMarker>();
-                if (responseData != null)
-                {
-                    newMarker = responseData;
-                }
-                return await Task.FromResult(new AuthenticationState(claimsPrincipal));
+                return new AuthenticationState(claimsPrincipal);
             }
             catch
             {
-                return await Task.FromResult(new AuthenticationState(anonymous));
+                return new AuthenticationState(anonymous);
             }
         }
 
@@ -77,14 +59,13 @@ namespace UCMaps
                 string serializeUserSession = JsonSerializer.Serialize(userSession);
                 await SecureStorage.Default.SetAsync("UserSession", serializeUserSession);
 
-                claimsPrincipal = new ClaimsPrincipal(new ClaimsIdentity(new List<Claim>
-                {
-                    new Claim(ClaimTypes.Name, userSession.Username)
-                }));
-
-                // Set token for HttpClient header
-                var httpClient = _serviceProvider.GetRequiredService<IHttpClientFactory>().CreateClient("api");
-                httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", userSession.Token);
+                var claims = new List<Claim>
+            {
+                new Claim(ClaimTypes.Name, userSession.Username),
+                new Claim("access_token", userSession.Token),
+                new Claim(ClaimTypes.NameIdentifier, userSession.Id.ToString())
+            };
+                claimsPrincipal = new ClaimsPrincipal(new ClaimsIdentity(claims, "CustomAuth"));
             }
             else
             {
@@ -95,4 +76,6 @@ namespace UCMaps
             NotifyAuthenticationStateChanged(Task.FromResult(new AuthenticationState(claimsPrincipal)));
         }
     }
+
+
 }

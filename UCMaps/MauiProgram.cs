@@ -16,23 +16,30 @@ namespace UCMaps
                 {
                     fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular");
                 });
-
+            
             builder.Services.AddMauiBlazorWebView();
             builder.Services.AddBlazorBootstrap();
             builder.Services.AddAuthorizationCore();
+
+            builder.Services.AddScoped<AuthHeaderHandler>();
+
             builder.Services.AddScoped<AuthenticationStateProvider, CustomAuthStateProvider>();
+            builder.Services.AddScoped<CustomAuthStateProvider>();
 
             string apiBaseAddress;
 #if ANDROID
             apiBaseAddress = "http://10.0.2.2:5078"; // Android emulator loopback address
 #else
-            apiBaseAddress = "http://localhost:5078"; // Use localhost for other platforms
+            apiBaseAddress = "https://localhost:7165"; // Use localhost for other platforms
 #endif
 
             builder.Services.AddHttpClient("api", httpClient =>
             {
                 httpClient.BaseAddress = new Uri(apiBaseAddress);
-            });
+            }).AddHttpMessageHandler<AuthHeaderHandler>();
+
+            builder.Services.AddScoped(sp => sp.GetRequiredService<IHttpClientFactory>()
+  .CreateClient("api"));
 
 #if DEBUG
             builder.Services.AddBlazorWebViewDeveloperTools();
