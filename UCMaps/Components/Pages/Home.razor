@@ -224,13 +224,12 @@
             };
 
     }
-
-    private async Task ShowMarkerComponent(string name, string desc)
+    
+    private async Task ShowMarkerComponent(UCMarker marker)
     {
         var parameters = new Dictionary<string, object>();
-        parameters.Add("MarkerLabel", name);
-        parameters.Add("Desc", desc);
-        await displayModal.ShowAsync<DisplayDetails>(title: name, parameters: parameters);
+        parameters.Add("Marker", marker);
+        await displayModal.ShowAsync<DisplayDetails>(title: marker.Name, parameters: parameters);
     }
 
     private async Task ProfileTab()
@@ -385,7 +384,7 @@
             string markerLabelText = await marker.GetLabelText();
             showMarkerComponent = true;
             selectedMarkerName = label;
-            await ShowMarkerComponent(label, desc);
+            await ShowMarkerComponent(newMarker);
             showMarker = true;
             StateHasChanged();
             await e.Stop();
@@ -460,7 +459,7 @@
         {
             showMarkerComponent = true;
             selectedMarkerName = ucmarker.Name;
-            await ShowMarkerComponent(ucmarker.Name, ucmarker.Description);
+            await ShowMarkerComponent(ucmarker);
             showMarker = true;
             StateHasChanged();
             await e.Stop();

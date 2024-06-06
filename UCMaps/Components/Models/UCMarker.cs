@@ -11,5 +11,6 @@ public class UCMarker
     public double Lat { get; set; }
     public double Lng { get; set; }
     public UserSession User { get; set; }
-    //public OneOf<string, MarkerLabel>? Label { get; set; }
+    public int StillThereCount { get; set; } = 0;
+    public int NotThereCount { get; set; } = 0;
 }

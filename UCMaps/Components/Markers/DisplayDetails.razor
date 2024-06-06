@@ -1,39 +1,100 @@
-﻿@* <!-- Display the Razor component -->
-<style>
-    .display-marker-container {
-/*         position: fixed; */
-        top: 100%; /* Initially hides the container */
-        right: 0;
-        left: 0;
-        z-index: 999;
-    }
+﻿@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject IHttpClientFactory HttpClientFactory
+@using System.Net.Http.Json
+@using System.Net.Http
+@using System.Security.Claims
+@using System.Threading.Tasks
 
-        /* Show animation */
-
-    /* Style for the content */
-    .display-marker-content {
-        padding: 20px;
-    }
-</style> *@
-
-<div class="row">
-    </div>
-    <p>@Desc</p>
-    <div class="row">
-        <div class="col-6">
-    <button class="btn btn-dark" >Still There</button>
-    </div>
-        <div class="col-6">
-            <button class="btn btn-dark">Not There</button>
-        </div>
+<div class="row mb-3">
+    <p class="lead">@Marker.Description</p>
 </div>
 
+@if (!hasVoted)
+{
+    <div class="row">
+        <div class="col-6 text-center">
+            <button class="btn btn-dark btn-lg mb-2" @onclick="StillThere">Still There</button>
+            <h6 class="display-6">@Marker.StillThereCount</h6>
+        </div>
+        <div class="col-6 text-center">
+            <button class="btn btn-dark btn-lg mb-2" @onclick="NotThere">Not There</button>
+            <h6 class="display-6">@Marker.NotThereCount</h6>
+        </div>
+    </div>
+}
+else
+{
+    <p class="text-success">You have already voted for this marker.</p>
+}
 
 @code {
     [Parameter]
-    public string MarkerLabel { get; set; }
+    public UCMarker Marker { get; set; }
 
-    [Parameter]
-    public string Desc { get; set; }
+    private bool hasVoted = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CheckIfUserHasVoted();
+    }
+
+    private async Task CheckIfUserHasVoted()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        if (user.Identity.IsAuthenticated)
+        {
+            var userId = user.FindFirst(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
+
+            var httpClient = HttpClientFactory.CreateClient("api");
+            var response = await httpClient.GetAsync($"api/markers/{Marker.Id}/user-vote-status?userId={userId}");
+
+            if (response.IsSuccessStatusCode)
+            {
+                hasVoted = await response.Content.ReadFromJsonAsync<bool>();
+            }
+        }
+    }
+
+    private async Task StillThere()
+    {
+        await VoteAsync(true);
+        StateHasChanged();
+    }
+
+    private async Task NotThere()
+    {
+        await VoteAsync(false);
+        StateHasChanged();
+    }
+
+    private async Task VoteAsync(bool isStillThere)
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        if (user.Identity.IsAuthenticated)
+        {
+            var httpClient = HttpClientFactory.CreateClient("api");
+
+            var response = await httpClient.PostAsJsonAsync($"api/Marker/{Marker.Id}/vote", isStillThere);
+
+            if (response.IsSuccessStatusCode)
+            {
+                var responseData = await response.Content.ReadFromJsonAsync<UCMarker>();
+                Marker = responseData;
+                hasVoted = true; // Update the flag to hide buttons
+            }
+            else
+            {
+                // Handle error response if needed
+            }
+        }
+    }
+
+    public class VoteDto
+    {
+        public bool IsStillThere { get; set; }
+    }
 }
-
