@@ -1,12 +1,12 @@
 ﻿@inherits LayoutComponentBase
 @inject HttpClient httpClient
 @inject NavigationManager NavManager
-@using Components.Models.DTO
 @using Newtonsoft.Json
-@using Components.Models
 @using UCMaps
 @using System.IdentityModel.Tokens.Jwt
 @inject AuthenticationStateProvider authStateProvider
+@using UCMaps.Components.Models
+@using UCMaps.Components.Models.DTO
 @using System.Security.Claims
 
 @if(!register){

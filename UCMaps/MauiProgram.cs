@@ -2,6 +2,8 @@
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.Extensions.Logging;
 using System.Net.Http;
+using UCMaps.Services.Marker;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace UCMaps
 {
@@ -22,9 +24,10 @@ namespace UCMaps
             builder.Services.AddAuthorizationCore();
 
             builder.Services.AddScoped<AuthHeaderHandler>();
-
+            builder.Services.AddScoped<IMarkerService, MarkerService>();
             builder.Services.AddScoped<AuthenticationStateProvider, CustomAuthStateProvider>();
             builder.Services.AddScoped<CustomAuthStateProvider>();
+            builder.Services.AddGeolocationServices();
 
             string apiBaseAddress;
 #if ANDROID

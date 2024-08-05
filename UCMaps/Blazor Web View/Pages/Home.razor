@@ -1,0 +1,258 @@
+﻿@page "/"
+@using GoogleMapsComponents
+@using GoogleMapsComponents.Maps
+@using Microsoft.JSInterop
+@using Blazor_Web_View.Components.Markers
+@using BlazorBootstrap
+@using System.Security.Claims
+@using UCMaps.Blazor_Web_View.Components.Map
+@inject UCMaps.Services.Marker.IMarkerService MarkerService
+@inject IGeolocationService GeolocationService
+
+<body>
+    @*     <div style="width: 100%; height: 100%;" @onclick="ToggleMarkerComponent"> *@
+    <!-- Container for the map -->
+    <GoogleMap Height="100vh" @ref="@map1" Id="map1" Options="@mapOptions" OnAfterInit="@(async () => await OnAfterInitAsync())"></GoogleMap>
+
+    @* <div class="display-marker-container @($"{(showMarker ? "show" : "hide")}")">
+    <div class="display-marker-content">
+    <DisplayDetails MarkerLabel="@selectedMarkerName"></DisplayDetails>
+    </div>
+    </div> *@
+
+    <Modal @ref="profileTab" />
+
+    <LoginButton OnClick="ProfileTab" />
+
+    <Modal @ref="displayModal" />
+
+    <Modal @ref="addModal" />
+
+    <!-- Button container -->
+    <!-- Use a conditional to show the input field only when adding a marker -->
+    <div class="add-marker-component plus-icon-container @($"{(showLabelInput ? "hide" : "side")}")" @onclick="ShowAddMarkerComponent">
+        <i class="bi bi-plus"></i>
+    </div>
+
+
+    @*  <div class="add-marker-container @($"{(showLabelInput ? "show" : "hide")}")">
+    <div class="add-marker-content">
+    <AddMarkerComponent ShowInput="@showLabelInput" OnConfirm="AddMarker"></AddMarkerComponent>
+    </div>
+    </div>  *@
+    @*     </div> *@
+    <!-- Other content -->
+</body>
+
+
+
+<script>
+    function callBlazorMethod(ucmarkerJson) {
+        DotNet.invokeMethodAsync('UCMaps', 'OnMarkerLabelChange', ucmarkerJson);
+    }
+</script>
+
+@code {
+    private GoogleMap map1;
+    private MapOptions mapOptions;
+    private Stack<Marker> markers = new Stack<Marker>();
+    private string labelText = "";
+    private string selectedMarkerName = "";
+    private string userId;
+
+    private Modal addModal = default!;
+    private Modal displayModal = default!;
+    private Modal profileTab = default!;
+
+    private bool showLabelInput = false;
+    private bool showMarker = false;
+    private bool showMarkerComponent = false;
+
+    private string description = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        mapOptions = new MapOptions()
+            {
+                Zoom = 16,
+                Center = new LatLngLiteral() { Lat = 39.133459, Lng = -84.515086 },
+                MapTypeId = MapTypeId.Roadmap,
+                ZoomControl = false,
+                DisableDefaultUI = true
+            };
+
+        await MarkerService.InitializeUserIdAsync();
+        // var location = await GeolocationService.GetCurrentPositionAsync();
+    }
+
+    private async Task OnAfterInitAsync()
+    {
+        var responseData = await MarkerService.GetMarkersAsync();
+
+        if (responseData != null)
+        {
+            foreach (var ucMarker in responseData)
+            {
+                await AddMarkerFromDB(ucMarker);
+            }
+        }
+    }
+
+    private async Task ShowMarkerComponent(UCMarker marker)
+    {
+        var parameters = new Dictionary<string, object> { { "Marker", marker } };
+        await displayModal.ShowAsync<DisplayDetails>(title: marker.Name, parameters: parameters);
+    }
+
+    private async Task ProfileTab()
+    {
+        await addModal.ShowAsync<ProfileTab>(title: "Profile");
+    }
+
+    private async Task ShowAddMarkerComponent()
+    {
+        var parameters = new Dictionary<string, object> { { "OnDataSent", EventCallback.Factory.Create<Tuple<string, string>>(this, HandleDataFromChild) } };
+        await addModal.ShowAsync<AddMarkerComponent>(title: "Add Marker", parameters: parameters);
+    }
+
+    private async void HandleDataFromChild(Tuple<string, string> data)
+    {
+        await addModal.HideAsync();
+        await AddMarker(data.Item1, data.Item2);
+    }
+
+    private async Task AddMarker(string label, string desc)
+    {
+        var marker = await Marker.CreateAsync(map1.JsRuntime,
+            new MarkerOptions()
+                {
+                    Position = await map1.InteropObject.GetCenter(),
+                    Map = map1.InteropObject,
+                    Label = new MarkerLabel { Text = label, FontWeight = "bold" },
+                    Draggable = true,
+                    Icon = new GoogleMapsComponents.Maps.Symbol()
+                    {
+                        FillColor = "Red",
+                        FillOpacity = 1,
+                        StrokeColor = "transparent",
+                        Path = "M-20,0a20,20 0 1,0 40,0a20,20 0 1,0 -40,0",
+                    }
+                });
+
+        var center = await map1.InteropObject.GetCenter();
+
+        UCMarker newMarker = new UCMarker
+            {
+                Name = label,
+                Description = desc,
+                Lat = center.Lat,
+                Lng = center.Lng
+            };
+
+        newMarker = await MarkerService.AddMarkerAsync(newMarker);
+
+        markers.Push(marker);
+        labelText = await marker.GetLabelText();
+        showLabelInput = false;
+        StateHasChanged();
+
+        await marker.AddListener<MouseEvent>("click", async e =>
+        {
+            selectedMarkerName = label;
+            await ShowMarkerComponent(newMarker);
+            showMarker = true;
+            StateHasChanged();
+            await e.Stop();
+        });
+
+        await marker.AddListener<MouseEvent>("dragend", async e =>
+        {
+            await OnMarkerDragEnd(marker, e, newMarker);
+            showLabelInput = true;
+        });
+    }
+
+    private async Task AddMarkerFromDB(UCMarker ucmarker)
+    {
+        LatLngLiteral position = new LatLngLiteral { Lat = ucmarker.Lat, Lng = ucmarker.Lng };
+
+        bool drag = ucmarker.User.Id.ToString() == userId;
+
+        var marker = await Marker.CreateAsync(map1.JsRuntime,
+            new MarkerOptions()
+                {
+                    Position = position,
+                    Map = map1.InteropObject,
+                    Label = new MarkerLabel
+                    {
+                        Text = ucmarker.Name,
+                        FontWeight = "bold",
+                        ClassName = "white-shadow-label"
+                    },
+                    Draggable = drag,
+                    Icon = new GoogleMapsComponents.Maps.Symbol()
+                    {
+                        FillColor = "Red",
+                        FillOpacity = 1,
+                        StrokeColor = "transparent",
+                        Path = "M-20,0a20,20 0 1,0 40,0a20,20 0 1,0 -40,0",
+                    }
+                });
+
+        markers.Push(marker);
+        labelText = await marker.GetLabelText();
+
+        await marker.AddListener<MouseEvent>("click", async e =>
+        {
+            selectedMarkerName = ucmarker.Name;
+            await ShowMarkerComponent(ucmarker);
+            showMarker = true;
+            StateHasChanged();
+            await e.Stop();
+        });
+
+        if (ucmarker.User.Id.ToString() == userId)
+        {
+            await marker.AddListener<MouseEvent>("dragend", async e => await OnMarkerDragEnd(marker, e, ucmarker));
+        }
+    }
+
+    private async Task OnMarkerDragEnd(Marker marker, MouseEvent e, UCMarker ucmarker)
+    {
+        UCMarker updateMarker = new UCMarker
+            {
+                Id = ucmarker.Id,
+                Name = ucmarker.Name,
+                Lat = e.LatLng.Lat,
+                Lng = e.LatLng.Lng
+            };
+
+        await MarkerService.UpdateMarkerAsync(updateMarker);
+        StateHasChanged();
+        await e.Stop();
+    }
+
+    private async Task RemoveMarker()
+    {
+        if (!markers.Any()) return;
+
+        var lastMarker = markers.Pop();
+        await lastMarker.SetMap(null);
+        labelText = markers.Any() ? await markers.Peek().GetLabelText() : "";
+    }
+
+    [JSInvokable]
+    public async Task OnMarkerLabelChange(UCMarker ucmarker)
+    {
+        UCMarker updateMarker = new UCMarker
+            {
+                Id = ucmarker.Id,
+                Name = ucmarker.Name,
+                Lat = ucmarker.Lat,
+                Lng = ucmarker.Lng
+            };
+
+        await MarkerService.UpdateMarkerAsync(updateMarker);
+        StateHasChanged();
+    }
+}
