@@ -1,0 +1,138 @@
+﻿@inherits LayoutComponentBase
+@inject HttpClient httpClient
+@inject NavigationManager NavManager
+@using Newtonsoft.Json
+@using UCMaps
+@using System.IdentityModel.Tokens.Jwt
+@inject AuthenticationStateProvider authStateProvider
+@using UCMaps.Components.Models
+@using UCMaps.Components.Models.DTO
+@using System.Security.Claims
+
+@if(!register){
+<h3>Login</h3>
+
+    <div class="row">
+        <label for="username">Name</label>
+        <InputText id="username" @bind-Value="username" />
+    </div>
+    <div class="row">
+        <label for="password">Password</label>
+        <InputText id="password" @bind-Value="password" type="password" />
+    </div>
+    <button clas="btn btn-primary" @onclick="HandleLogin">Login</button>
+    <button class="btn btn-primary" @onclick="registerBool">Create new user</button>
+}
+else
+{
+    <h3>Register</h3>
+    <div class="row">
+        <label for="username">Name</label>
+        <InputText id="username" @bind-Value="username" />
+    </div>
+    <div class="row">
+        <label for="email">Email</label>
+        <InputText id="email" @bind-Value="email" />
+    </div>
+    <div class="row">
+        <label for="password">Password</label>
+        <InputText id="password" @bind-Value="password" type="password" />
+    </div>
+    <button class="btn btn-primary" @onclick="HandleRegister">Register</button>
+}
+
+@code {
+    private UserLoginDto user = new UserLoginDto();
+    private string username { get; set; } = string.Empty;
+    private string password { get; set; } = string.Empty;
+    private string email { get; set; } = string.Empty;
+    [Parameter]
+    public EventCallback OnLoginSuccess { get; set; }
+
+    private bool register = false;
+
+    public async Task<ServiceResponse<string>> HandleLogin()
+    {
+        var userLoginDto = new UserLoginDto { Username = username, Password = password };
+        var response = await httpClient.PostAsJsonAsync("http://localhost:5078/Auth/Login", userLoginDto);
+        var content = await response.Content.ReadAsStringAsync();
+        var serviceResponse = JsonConvert.DeserializeObject<ServiceResponse<string>>(content);
+
+        if (serviceResponse.Success)
+        {
+            var getUserSession = GetUserClaims(serviceResponse.Data);
+
+            var customAuthStateProvider = (CustomAuthStateProvider)authStateProvider;
+            await customAuthStateProvider.UpdateAuthenticationState(getUserSession);
+            await OnLoginSuccess.InvokeAsync();
+        }
+
+        return serviceResponse;
+    }
+
+    private async Task registerBool()
+    {
+        register = !register;
+        StateHasChanged();
+    }
+
+    public async Task<ServiceResponse<string>> HandleRegister()
+    {
+        var userRegisterDto = new UserRegisterDto { Username = username, Email = email, Password = password };
+        var response = await httpClient.PostAsJsonAsync("http://localhost:5078/Auth/Register", userRegisterDto);
+        var content = await response.Content.ReadAsStringAsync();
+        var serviceResponse = JsonConvert.DeserializeObject<ServiceResponse<string>>(content);
+
+        if (serviceResponse.Success)
+        {
+            await HandleLogin();
+        }
+
+        return serviceResponse;
+    }
+
+    private UserSession GetUserClaims(string token)
+    {
+        var handler = new JwtSecurityTokenHandler();
+        var readToken = handler.ReadJwtToken(token);
+        var claims = readToken.Claims;
+        // var payload = token.Split('.')[1];
+        // var jsonBytes = ParseBase64WithoutPadding(payload);
+        // var keyValuePairs = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, object>>(jsonBytes);
+
+        // var fart = keyValuePairs.Select(kvp => new Claim(kvp.Key, kvp.Value.ToString()));
+        var usernameClaim = claims.FirstOrDefault(_ => _.Type == "unique_name") ?? claims.FirstOrDefault(_ => _.Type == ClaimTypes.Name);
+        var nameIdClaim = claims.FirstOrDefault(_ => _.Type == "nameid");
+
+        if (usernameClaim == null)
+        {
+            throw new Exception("Username claim not found");
+        }
+        if (nameIdClaim == null)
+        {
+            throw new Exception("NameID claim not found");
+        }
+
+        if (!int.TryParse(nameIdClaim.Value, out int userId))
+        {
+            throw new Exception("Invalid NameID claim value");
+        }
+
+        return new UserSession()
+            {
+                Username = usernameClaim.Value,
+                Id = userId,
+                Token = token
+            };
+
+    }
+    private static byte[] ParseBase64WithoutPadding(string base64)
+    {
+       switch (base64.Length % 4)
+       {
+           case 2: base64 += "=="; break;
+           case 3: base64 += "="; break;
+       }
+       return Convert.FromBase64String(base64);
+    }
+}

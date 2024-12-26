@@ -1,0 +1,23 @@
+﻿<div class="row">
+    <input type="text" class="form-control mb-2" @bind="Label" placeholder="Enter label">
+    <input type="text" class="form-control mb-2" @bind="Desc" placeholder="Enter Description">
+</div>
+<div class="row">
+    <button class="btn btn-dark" @onclick="Confirm">Confirm</button>
+</div>
+
+@code {
+    [Parameter]
+    public bool ShowInput { get; set; }
+
+    [Parameter]
+    public EventCallback<Tuple<string, string>> OnDataSent { get; set; }
+
+    public string Label { get; set; }
+    public string Desc { get; set; }
+
+    private async Task Confirm()
+    {
+        await OnDataSent.InvokeAsync(new Tuple<string, string>(Label, Desc));
+    }
+}

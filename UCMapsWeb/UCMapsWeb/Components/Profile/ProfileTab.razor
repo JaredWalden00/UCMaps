@@ -1,0 +1,28 @@
+﻿@inherits LayoutComponentBase
+@inject NavigationManager NavManager
+@using UCMaps
+@inject AuthenticationStateProvider authStateProvider
+@using UCMaps.Components.Models
+
+<AuthorizeView>
+    <Authorized>
+        <h6>Hi, @context.User.Identity.Name</h6>
+        <button type="submit" class="btn btn-primary" @onclick="LogoutAsync">Logout</button>
+    </Authorized>
+    <NotAuthorized>
+        <Login OnLoginSuccess="HandleLoginSuccess" />
+    </NotAuthorized>
+</AuthorizeView>
+
+@code {
+    private async Task HandleLoginSuccess()
+    {
+        NavManager.NavigateTo(NavManager.Uri, forceLoad: true);
+
+    }
+    public async Task LogoutAsync()
+    {
+        var customAuthStateProvider = (CustomAuthStateProvider)authStateProvider;
+        await customAuthStateProvider.UpdateAuthenticationState(new UserSession());
+    }
+}
