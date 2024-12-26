@@ -1,0 +1,25 @@
+﻿<style>
+    .bottom-left-button {
+        position: fixed;
+        bottom: 20px; /* Position it 20px from the bottom */
+        left: 20px; /* Position it 20px from the left */
+        width: 50px; /* Set width */
+        height: 50px; /* Set height to be equal to width */
+        background-color: #007bff;
+        color: white;
+        border: none;
+        border-radius: 50%; /* Make it a perfect circle */
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+</style>
+
+<button class="bottom-left-button" @onclick="OnClick">
+    <i class="bi bi-list"></i>
+</button>
+
+@code {
+    [Parameter]
+    public EventCallback OnClick { get; set; }
+}

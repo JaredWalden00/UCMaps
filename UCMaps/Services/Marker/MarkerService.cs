@@ -6,6 +6,8 @@ using System.Net.Http.Json;
 using System.Text;
 using System.Threading.Tasks;
 using System.Security.Claims;
+using GoogleMapsComponents.Maps;
+using UCMaps.Blazor_Web_View.Models.DTO;
 
 
 namespace UCMaps.Services.Marker
@@ -49,13 +51,19 @@ namespace UCMaps.Services.Marker
             return await response.Content.ReadFromJsonAsync<UCMarker>();
         }
 
-        public async Task UpdateMarkerAsync(UCMarker updateMarker)
+        public async Task UpdateMarkerAsync(UCMarker marker)
         {
-            using (var client = new HttpClient())
+            var updateMarker = new UpdateMarkerDto
             {
-                var response = await client.PutAsJsonAsync(BaseUrl, updateMarker);
+                Id = marker.Id,
+                Name = marker.Name,
+                Description = marker.Description,
+                Lat = marker.Lat,
+                Lng = marker.Lng
+            };
+            var httpClient = _httpClientFactory.CreateClient("api");
+                var response = await httpClient.PutAsJsonAsync("api/Marker", updateMarker);
                 response.EnsureSuccessStatusCode();
-            }
         }
     }
 }

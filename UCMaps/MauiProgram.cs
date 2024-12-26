@@ -4,6 +4,7 @@ using Microsoft.Extensions.Logging;
 using System.Net.Http;
 using UCMaps.Services.Marker;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.JSInterop;
 
 namespace UCMaps
 {
@@ -30,8 +31,9 @@ namespace UCMaps
             builder.Services.AddGeolocationServices();
 
             string apiBaseAddress;
+            apiBaseAddress = "http://ucmapsapi.azurewebsites.net";
 #if ANDROID
-            apiBaseAddress = "http://10.0.2.2:5078"; // Android emulator loopback address
+                        apiBaseAddress = "http://10.0.2.2:5078"; // Android emulator loopback address
 #else
             apiBaseAddress = "https://localhost:7165"; // Use localhost for other platforms
 #endif

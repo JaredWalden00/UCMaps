@@ -6,13 +6,20 @@
 @using BlazorBootstrap
 @using System.Security.Claims
 @using UCMaps.Blazor_Web_View.Components.Map
+@using Newtonsoft.Json.Linq
+@using UCMaps.Components.Models
 @inject UCMaps.Services.Marker.IMarkerService MarkerService
 @inject IGeolocationService GeolocationService
+@inject IJSRuntime JS
+
 
 <body>
     @*     <div style="width: 100%; height: 100%;" @onclick="ToggleMarkerComponent"> *@
     <!-- Container for the map -->
-    <GoogleMap Height="100vh" @ref="@map1" Id="map1" Options="@mapOptions" OnAfterInit="@(async () => await OnAfterInitAsync())"></GoogleMap>
+    @if (mapOptions != null)
+    {
+        <GoogleMapsComponents.GoogleMap Height="100vh" @ref="map1" Id="map1" Options="mapOptions" OnAfterInit="@(async () => await OnAfterInitAsync())"></GoogleMapsComponents.GoogleMap>
+    }
 
     @* <div class="display-marker-container @($"{(showMarker ? "show" : "hide")}")">
     <div class="display-marker-content">
@@ -34,6 +41,8 @@
         <i class="bi bi-plus"></i>
     </div>
 
+    <Recenter OnClick="resetUserInteraction" />
+
 
     @*  <div class="add-marker-container @($"{(showLabelInput ? "show" : "hide")}")">
     <div class="add-marker-content">
@@ -48,18 +57,38 @@
 
 <script>
     function callBlazorMethod(ucmarkerJson) {
-        DotNet.invokeMethodAsync('UCMaps', 'OnMarkerLabelChange', ucmarkerJson);
+    DotNet.invokeMethodAsync('UCMaps', 'OnMarkerLabelChange', ucmarkerJson);
     }
 </script>
 
+<script>
+    window.getCoords = async () => {
+    return new Promise((resolve, reject) => {
+    navigator.geolocation.getCurrentPosition(
+    (position) => {
+    resolve({
+    latitude: position.coords.latitude,
+    longitude: position.coords.longitude
+    });
+    },
+    (error) => {
+    reject(error);
+    }
+    );
+    });
+    };
+</script>
+
 @code {
-    private GoogleMap map1;
-    private MapOptions mapOptions;
+    private GoogleMapsComponents.GoogleMap map1;
+    private MapOptions? mapOptions;
+    private Marker user;
     private Stack<Marker> markers = new Stack<Marker>();
+    private object userLocationMarker;
     private string labelText = "";
     private string selectedMarkerName = "";
     private string userId;
-
+    private System.Timers.Timer locationUpdateTimer;
     private Modal addModal = default!;
     private Modal displayModal = default!;
     private Modal profileTab = default!;
@@ -70,23 +99,71 @@
 
     private string description = "";
 
+    private DotNetObjectReference<Home>? dotNetHelper;
+
+    private Location coords;
+    private bool isUserInteractingWithMap = false; // Tracks if the user is moving the map
+
     protected override async Task OnInitializedAsync()
     {
-        mapOptions = new MapOptions()
-            {
-                Zoom = 16,
-                Center = new LatLngLiteral() { Lat = 39.133459, Lng = -84.515086 },
-                MapTypeId = MapTypeId.Roadmap,
-                ZoomControl = false,
-                DisableDefaultUI = true
-            };
+        // Location coords = await Geolocation.Default.GetLocationAsync();
+        // mapOptions = new MapOptions()
+        //     {
+        //         Zoom = 16,
+        //         Center = new LatLngLiteral() { Lat = coords.Latitude, Lng = coords.Longitude },
+        //         MapTypeId = MapTypeId.Roadmap,
+        //         ZoomControl = false,
+        //         DisableDefaultUI = true
+        //     };
 
-        await MarkerService.InitializeUserIdAsync();
-        // var location = await GeolocationService.GetCurrentPositionAsync();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            coords = await Geolocation.Default.GetLocationAsync();
+            mapOptions = new MapOptions()
+                {
+                    Zoom = 16,
+                    Center = new LatLngLiteral() { Lat = coords.Latitude, Lng = coords.Longitude },
+                    MapTypeId = MapTypeId.Roadmap,
+                    ZoomControl = false,
+                    DisableDefaultUI = true
+                };
+
+            // mapOptions = new MapOptions()
+            //    {
+            //        Zoom = 16,
+            //        Center = new LatLngLiteral() { Lat = 39.1329, Lng = 84.5150 },
+            //        MapTypeId = MapTypeId.Roadmap,
+            //        ZoomControl = false,
+            //        DisableDefaultUI = true
+            //    };
+            await MarkerService.InitializeUserIdAsync();
+
+            StateHasChanged();
+        }
     }
 
     private async Task OnAfterInitAsync()
     {
+        // var coords = await GetLocationAsync();
+        // Location coords = await Geolocation.Default.GetLocationAsync();
+
+        if (map1 == null || map1.JsRuntime == null)
+        {
+            Console.WriteLine("Initialization failed: coords, map1, or map1.JsRuntime is null.");
+            return;
+        }
+
+        dotNetHelper = DotNetObjectReference.Create(this);
+
+        await InitializeMapAndMarkerAsync();
+        StartLocationUpdates();
+        await AddMapEventListeners();
+        // Continue with other operations...
+
         var responseData = await MarkerService.GetMarkersAsync();
 
         if (responseData != null)
@@ -97,6 +174,146 @@
             }
         }
     }
+
+    private async Task AddMapEventListeners()
+    {
+        if (map1 != null && map1.InteropObject != null)
+        {
+            // Detect when the user manually moves the map
+            // await map1.InteropObject.AddListener("drag", () =>
+            // {
+            //     isUserInteractingWithMap = true;
+            //     // ResetInteractionTimeout();
+            // });
+            if (isUserInteractingWithMap == false)
+            {
+                await map1.InteropObject.AddListener("drag", () =>
+                {
+                    isUserInteractingWithMap = true;
+                    // ResetInteractionTimeout();
+                });
+            }
+            //     await map1.AddListener<MouseEvent>("dragend", () =>
+        // {
+        //     resetUserInteraction = false;
+        // });
+        }
+    }
+
+    private async Task InitializeMapAndMarkerAsync()
+    {
+        // Fetch initial location
+        // Location initialCoords = await Geolocation.Default.GetLocationAsync();
+
+        if (coords != null)
+        {
+            user = await Marker.CreateAsync(map1.JsRuntime,
+                new MarkerOptions()
+                    {
+                        Position = new LatLngLiteral() { Lat = coords.Latitude, Lng = coords.Longitude },
+                        Map = map1.InteropObject,
+                        Label = new MarkerLabel { Text = "user", FontWeight = "bold", Color = "white" },
+                        Draggable = false,
+                        Icon = new GoogleMapsComponents.Maps.Symbol()
+                        {
+                            FillColor = "Blue",
+                            FillOpacity = 1,
+                            StrokeColor = "transparent",
+                            Path = "M-20,0a20,20 0 1,0 40,0a20,20 0 1,0 -40,0",
+                        }
+                    });
+        }
+    }
+
+    private void StartLocationUpdates()
+    {
+        locationUpdateTimer = new System.Timers.Timer(3000); // Update every 5 seconds
+        // locationUpdateTimer.Elapsed += async (sender, e) => await UpdateUserLocationAsync();
+        locationUpdateTimer.Start();
+    }
+
+    // private async Task UpdateUserLocationAsync()
+    // {
+    //     Location coords2 = await Geolocation.Default.GetLocationAsync();
+
+    //     if (coords2 != coords)
+    //     {
+    //         coords = coords2;
+    //         await user.SetPosition(new LatLngLiteral() { Lat = coords.Latitude, Lng = coords.Longitude });
+
+    //         if (map1 != null && !isUserInteractingWithMap)
+    //         {
+    //             await map1.InteropObject.SetCenter(new LatLngLiteral()
+    //                 {
+    //                     Lat = coords.Latitude,
+    //                     Lng = coords.Longitude
+    //                 });
+    //         }
+    //     }
+    // }
+
+    public void Dispose()
+    {
+        locationUpdateTimer?.Stop();
+        locationUpdateTimer?.Dispose();
+    }
+
+    private void UpdateMapOptions(LatLngLiteral center)
+    {
+        mapOptions = new MapOptions()
+            {
+                Zoom = 16,
+                Center = new LatLngLiteral() { Lat = 0, Lng = 0 },
+                MapTypeId = MapTypeId.Roadmap,
+                ZoomControl = false,
+                DisableDefaultUI = true
+            };
+    }
+
+    private async Task resetUserInteraction()
+    {
+        isUserInteractingWithMap = false;
+        await map1.InteropObject.SetCenter(new LatLngLiteral()
+            {
+                Lat = coords.Latitude,
+                Lng = coords.Longitude
+            });
+    }
+
+    // private async Task<Coordinates> GetLocationAsync()
+    // {
+    //     try
+    //     {
+    //         // Call the JavaScript function to get the user's coordinates
+    //         Location coords = await Geolocation.Default.GetLocationAsync();
+
+    //         // Handle the received coordinates
+
+    //         return coords;
+    //     }
+    //     catch (Exception ex)
+    //     {
+    //         Console.WriteLine($"Error getting location: {ex.Message}");
+    //         return null;
+    //     }
+    // }
+
+    // [JSInvokable] //not called rn
+    // public async Task UpdateUserLocation(double latitude, double longitude)
+    // {
+    //     var position = new LatLngLiteral { Lat = latitude, Lng = longitude };
+
+    //     if (userLocationMarker == null)
+    //     {
+    //         userLocationMarker = await JS.InvokeAsync<object>("addAdvancedMarker", map1.InteropObject, position, "You are here");
+    //     }
+    //     else
+    //     {
+    //         // Update the marker's position
+    //         await JS.InvokeVoidAsync("updateMarkerPosition", userLocationMarker, position);
+    //     }
+    // }
+
 
     private async Task ShowMarkerComponent(UCMarker marker)
     {
