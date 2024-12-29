@@ -8,7 +8,14 @@
 
   <ItemGroup>
     <ProjectReference Include="..\UCMapsWeb.Client\UCMapsWeb.Client.csproj" />
+    <PackageReference Include="Blazor.Bootstrap" Version="3.2.0" />
+    <PackageReference Include="Blazor.Geolocation" Version="8.0.0" />
+    <PackageReference Include="BlazorGoogleMaps" Version="4.9.2" />
+    <PackageReference Include="Darnton.Blazor.DeviceInterop" Version="0.1.2" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.Authorization" Version="8.0.11" />
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="8.0.11" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+    <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.3.0" />
   </ItemGroup>
 
 </Project>

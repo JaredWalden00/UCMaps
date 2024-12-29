@@ -1,7 +1,7 @@
 ﻿using GoogleMapsComponents.Maps;
 using OneOf;
 using System.Text.Json.Serialization;
-using UCMaps.Components.Models;
+using UCMapsWeb.Models;
 
 public class UCMarker
 {

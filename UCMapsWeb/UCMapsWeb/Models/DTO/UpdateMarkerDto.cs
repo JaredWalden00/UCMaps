@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace UCMaps.Blazor_Web_View.Models.DTO
+namespace UCMapsWeb.Models.DTO
 {
     public class UpdateMarkerDto
     {

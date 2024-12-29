@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace UCMaps.Components.Models.DTO
+namespace UCMapsWeb.Models.DTO
 {
     public class UserLoginDto
     {

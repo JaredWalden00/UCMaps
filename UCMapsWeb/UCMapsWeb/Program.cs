@@ -1,4 +1,8 @@
+using Darnton.Blazor.DeviceInterop.Geolocation;
+using Microsoft.AspNetCore.Components.Authorization;
+using UCMapsWeb;
 using UCMapsWeb.Components;
+using UCMapsWeb.Services.Marker;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -6,6 +10,29 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents()
     .AddInteractiveWebAssemblyComponents();
+builder.Services.AddAuthorizationCore();
+builder.Services.AddBlazorBootstrap();
+
+builder.Services.AddRazorComponents()
+  .AddInteractiveServerComponents()
+  .AddInteractiveWebAssemblyComponents();
+builder.Services.AddScoped<AuthHeaderHandler>();
+builder.Services.AddScoped<IMarkerService, MarkerService>();
+builder.Services.AddScoped<AuthenticationStateProvider, CustomAuthStateProvider>();
+builder.Services.AddScoped<CustomAuthStateProvider>();
+builder.Services.AddScoped<IGeolocationService, GeolocationService>();
+
+string apiBaseAddress;
+//apiBaseAddress = "http://ucmapsapi.azurewebsites.net";
+apiBaseAddress = "https://localhost:7165"; // Use localhost for other platforms
+
+builder.Services.AddHttpClient("api", httpClient =>
+{
+    httpClient.BaseAddress = new Uri(apiBaseAddress);
+}).AddHttpMessageHandler<AuthHeaderHandler>();
+
+builder.Services.AddScoped(sp => sp.GetRequiredService<IHttpClientFactory>()
+.CreateClient("api"));
 
 var app = builder.Build();
 

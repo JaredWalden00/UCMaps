@@ -1,0 +1,99 @@
+/* Style to make the map fill the entire viewport */
+
+/* Style for button container */
+.button-container {
+    position: absolute;
+    bottom: 10px;
+    right: 10px;
+    z-index: 1000;
+}
+
+.bi.bi-plus {
+    font-size: 2rem; /* Adjust the size as needed */
+    color: white; /* Color of the plus icon */
+}
+
+/* Style for the blue circle */
+.plus-icon-container {
+    width: 50px; /* Adjust the size of the circle */
+    height: 50px; /* Adjust the size of the circle */
+    background-color: blue; /* Color of the circle */
+    border-radius: 50%; /* Make it a circle */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+}
+
+    /* Show animation */
+    .plus-icon-container.show {
+        bottom: 0%;
+    }
+
+    /* Hide animation */
+    .plus-icon-container.hide {
+        bottom: -100%;
+    }
+
+/* Style for the button */
+.add-marker-component {
+    position: fixed;
+    bottom: 10px;
+    right: 10px;
+    z-index: 1000;
+}
+
+    .add-marker-component i {
+        font-size: 2rem;
+        color: white;
+    }
+
+/* Style for the container */
+.add-marker-container {
+    position: fixed;
+    bottom: -100%; /* Initially hides the container */
+    right: 0;
+    left: 0;
+    z-index: 999;
+    transition: bottom 0.5s ease; /* Smooth transition when showing/hiding */
+}
+
+    /* Show animation */
+    .add-marker-container.show {
+        bottom: 0;
+    }
+
+    /* Hide animation */
+    .add-marker-container.hide {
+        bottom: -100%;
+    }
+
+/* Style for the content */
+.add-marker-content {
+    padding: 20px;
+}
+
+/* Style for the container */
+.display-marker-container {
+    position: fixed;
+    top: 100%; /* Initially hides the container */
+    right: 0;
+    left: 0;
+    z-index: 999;
+    transition: top 0.5s ease; /* Smooth transition when showing/hiding */
+}
+
+    /* Show animation */
+    .display-marker-container.show {
+        top: 0;
+    }
+
+    /* Hide animation */
+    .display-marker-container.hide {
+        top: -100%;
+    }
+
+/* Style for the content */
+.display-marker-content {
+    padding: 20px;
+}

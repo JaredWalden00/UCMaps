@@ -5,6 +5,10 @@ VisualStudioVersion = 17.9.34728.123
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "UCMaps", "UCMaps\UCMaps.csproj", "{482E01EC-C5C1-4017-9F80-3BEC110DDC99}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UCMapsWeb", "UCMapsWeb\UCMapsWeb\UCMapsWeb.csproj", "{7C3C07E6-5101-4A11-9482-7265B5A8433A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UCMapsWeb.Client", "UCMapsWeb\UCMapsWeb.Client\UCMapsWeb.Client.csproj", "{07D3AEA9-2BF1-46B7-BCB7-ADD8309FFC01}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -17,6 +21,14 @@ Global
 		{482E01EC-C5C1-4017-9F80-3BEC110DDC99}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{482E01EC-C5C1-4017-9F80-3BEC110DDC99}.Release|Any CPU.Build.0 = Release|Any CPU
 		{482E01EC-C5C1-4017-9F80-3BEC110DDC99}.Release|Any CPU.Deploy.0 = Release|Any CPU
+		{7C3C07E6-5101-4A11-9482-7265B5A8433A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7C3C07E6-5101-4A11-9482-7265B5A8433A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7C3C07E6-5101-4A11-9482-7265B5A8433A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7C3C07E6-5101-4A11-9482-7265B5A8433A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{07D3AEA9-2BF1-46B7-BCB7-ADD8309FFC01}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{07D3AEA9-2BF1-46B7-BCB7-ADD8309FFC01}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{07D3AEA9-2BF1-46B7-BCB7-ADD8309FFC01}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{07D3AEA9-2BF1-46B7-BCB7-ADD8309FFC01}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

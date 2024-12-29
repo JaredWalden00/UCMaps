@@ -1,17 +1,19 @@
-﻿@page "/"
+﻿@rendermode InteractiveServer
+@page "/"
 @using GoogleMapsComponents
 @using GoogleMapsComponents.Maps
 @using Microsoft.JSInterop
-@using Blazor_Web_View.Components.Markers
+@using Components.Markers
 @using BlazorBootstrap
 @using System.Security.Claims
-@using UCMaps.Blazor_Web_View.Components.Map
+@using UCMapsWeb.Components.Map
 @using Newtonsoft.Json.Linq
-@using UCMaps.Components.Models
-@inject UCMaps.Services.Marker.IMarkerService MarkerService
-@inject IGeolocationService GeolocationService
+@using UCMapsWeb.Components.Profile
+@using UCMapsWeb.Models
+@inject UCMapsWeb.Services.Marker.IMarkerService MarkerService
+@inject Darnton.Blazor.DeviceInterop.Geolocation.IGeolocationService GeolocationService
+@using Darnton.Blazor.DeviceInterop.Geolocation;
 @inject IJSRuntime JS
-
 
 <body>
     @*     <div style="width: 100%; height: 100%;" @onclick="ToggleMarkerComponent"> *@
@@ -101,16 +103,16 @@
 
     private DotNetObjectReference<Home>? dotNetHelper;
 
-    private Location coords;
+    private GeolocationResult coords;
     private bool isUserInteractingWithMap = false; // Tracks if the user is moving the map
 
     protected override async Task OnInitializedAsync()
     {
-        // Location coords = await Geolocation.Default.GetLocationAsync();
+        // coords = await GeolocationService.GetCurrentPosition();
         // mapOptions = new MapOptions()
         //     {
         //         Zoom = 16,
-        //         Center = new LatLngLiteral() { Lat = coords.Latitude, Lng = coords.Longitude },
+        //         Center = new LatLngLiteral() { Lat = coords.Position.Coords.Latitude, Lng = coords.Position.Coords.Longitude },
         //         MapTypeId = MapTypeId.Roadmap,
         //         ZoomControl = false,
         //         DisableDefaultUI = true
@@ -122,11 +124,11 @@
     {
         if (firstRender)
         {
-            coords = await Geolocation.Default.GetLocationAsync();
+            coords = await GeolocationService.GetCurrentPosition();
             mapOptions = new MapOptions()
                 {
                     Zoom = 16,
-                    Center = new LatLngLiteral() { Lat = coords.Latitude, Lng = coords.Longitude },
+                    Center = new LatLngLiteral() { Lat = coords.Position.Coords.Latitude, Lng = coords.Position.Coords.Longitude },
                     MapTypeId = MapTypeId.Roadmap,
                     ZoomControl = false,
                     DisableDefaultUI = true
@@ -210,7 +212,7 @@
             user = await Marker.CreateAsync(map1.JsRuntime,
                 new MarkerOptions()
                     {
-                        Position = new LatLngLiteral() { Lat = coords.Latitude, Lng = coords.Longitude },
+                        Position = new LatLngLiteral() { Lat = coords.Position.Coords.Latitude, Lng = coords.Position.Coords.Longitude },
                         Map = map1.InteropObject,
                         Label = new MarkerLabel { Text = "user", FontWeight = "bold", Color = "white" },
                         Draggable = false,
@@ -275,8 +277,8 @@
         isUserInteractingWithMap = false;
         await map1.InteropObject.SetCenter(new LatLngLiteral()
             {
-                Lat = coords.Latitude,
-                Lng = coords.Longitude
+                Lat = coords.Position.Coords.Latitude,
+                Lng = coords.Position.Coords.Longitude
             });
     }
 
