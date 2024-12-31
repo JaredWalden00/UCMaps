@@ -2,10 +2,12 @@ using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 using Microsoft.AspNetCore.Components.Authorization;
 using System.Net.Http;
 using UCMapsWeb.Client;
+using UCMapsWeb.Client.Services;
+using UCMapsWeb.Client.Services.Marker;
 
 var builder = WebAssemblyHostBuilder.CreateDefault(args);
 
-
+builder.Services.AddScoped<IMarkerService, MarkerService>();
 string apiBaseAddress;
 //apiBaseAddress = "http://ucmapsapi.azurewebsites.net";
 apiBaseAddress = "https://localhost:7165"; // Use localhost for other platforms

@@ -3,7 +3,6 @@ using Darnton.Blazor.DeviceInterop.Geolocation;
 using Microsoft.AspNetCore.Components.Authorization;
 using UCMapsWeb;
 using UCMapsWeb.Components;
-using UCMapsWeb.Services.Marker;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -17,16 +16,8 @@ builder.Services.AddBlazorBootstrap();
 builder.Services.AddRazorComponents()
   .AddInteractiveServerComponents()
   .AddInteractiveWebAssemblyComponents();
-builder.Services.AddScoped<IMarkerService, MarkerService>();
 builder.Services.AddScoped<IGeolocationService, GeolocationService>();
 builder.Services.AddBlazoredLocalStorage();
-
-string apiBaseAddress;
-//apiBaseAddress = "http://ucmapsapi.azurewebsites.net";
-apiBaseAddress = "https://localhost:7165"; // Use localhost for other platforms
-
-builder.Services.AddScoped(sp => sp.GetRequiredService<IHttpClientFactory>()
-.CreateClient("api"));
 
 var app = builder.Build();
 

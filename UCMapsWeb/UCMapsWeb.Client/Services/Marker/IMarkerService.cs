@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace UCMapsWeb.Services.Marker
+namespace UCMapsWeb.Client.Services.Marker
 {
     public interface IMarkerService
     {

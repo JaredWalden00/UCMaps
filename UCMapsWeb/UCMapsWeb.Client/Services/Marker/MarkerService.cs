@@ -6,12 +6,11 @@ using System.Net.Http.Json;
 using System.Text;
 using System.Threading.Tasks;
 using System.Security.Claims;
-using GoogleMapsComponents.Maps;
 using UCMapsShared.Models;
 using UCMapsShared.Models.DTO;
 
 
-namespace UCMapsWeb.Services.Marker
+namespace UCMapsWeb.Client.Services.Marker
 {
     public class MarkerService : IMarkerService
     {
@@ -71,8 +70,8 @@ namespace UCMapsWeb.Services.Marker
                 Lng = marker.Lng
             };
             var httpClient = _httpClientFactory.CreateClient("api");
-                var response = await httpClient.PutAsJsonAsync("api/Marker", updateMarker);
-                response.EnsureSuccessStatusCode();
+            var response = await httpClient.PutAsJsonAsync("api/Marker", updateMarker);
+            response.EnsureSuccessStatusCode();
         }
     }
 }
