@@ -46,10 +46,18 @@ namespace UCMapsWeb.Services.Marker
         public async Task<UCMarker> AddMarkerAsync(UCMarker newMarker)
         {
             var httpClient = _httpClientFactory.CreateClient("api");
-            var response = await httpClient.PostAsJsonAsync("api/Marker", newMarker);
+
+            var request = new HttpRequestMessage(HttpMethod.Post, "api/Marker")
+            {
+                Content = JsonContent.Create(newMarker)
+            };
+
+            var response = await httpClient.SendAsync(request);
             response.EnsureSuccessStatusCode();
+
             return await response.Content.ReadFromJsonAsync<UCMarker>();
         }
+
 
         public async Task UpdateMarkerAsync(UCMarker marker)
         {

@@ -1,3 +1,4 @@
+using Blazored.LocalStorage;
 using Darnton.Blazor.DeviceInterop.Geolocation;
 using Microsoft.AspNetCore.Components.Authorization;
 using UCMapsWeb;
@@ -21,6 +22,7 @@ builder.Services.AddScoped<IMarkerService, MarkerService>();
 builder.Services.AddScoped<AuthenticationStateProvider, CustomAuthStateProvider>();
 builder.Services.AddScoped<CustomAuthStateProvider>();
 builder.Services.AddScoped<IGeolocationService, GeolocationService>();
+builder.Services.AddBlazoredLocalStorage();
 
 string apiBaseAddress;
 //apiBaseAddress = "http://ucmapsapi.azurewebsites.net";
