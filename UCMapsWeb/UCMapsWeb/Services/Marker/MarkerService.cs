@@ -7,7 +7,8 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Security.Claims;
 using GoogleMapsComponents.Maps;
-using UCMapsWeb.Models.DTO;
+using UCMapsShared.Models;
+using UCMapsShared.Models.DTO;
 
 
 namespace UCMapsWeb.Services.Marker

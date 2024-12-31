@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace UCMapsWeb.Models.DTO
+namespace UCMapsShared.Models.DTO
 {
     public class UpdateMarkerDto
     {

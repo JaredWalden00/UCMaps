@@ -9,6 +9,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UCMapsWeb", "UCMapsWeb\UCMa
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UCMapsWeb.Client", "UCMapsWeb\UCMapsWeb.Client\UCMapsWeb.Client.csproj", "{07D3AEA9-2BF1-46B7-BCB7-ADD8309FFC01}"
 EndProject
+Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "UCMapsShared", "UCMapsShared\UCMapsShared.shproj", "{11FECB1A-AA96-43BD-9B59-6A4EE2CF0B93}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -35,5 +37,10 @@ Global
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {1B771F62-0F24-4E9E-9977-3E2D756D883D}
+	EndGlobalSection
+	GlobalSection(SharedMSBuildProjectFiles) = preSolution
+		UCMapsShared\UCMapsShared.projitems*{07d3aea9-2bf1-46b7-bcb7-add8309ffc01}*SharedItemsImports = 5
+		UCMapsShared\UCMapsShared.projitems*{11fecb1a-aa96-43bd-9b59-6a4ee2cf0b93}*SharedItemsImports = 13
+		UCMapsShared\UCMapsShared.projitems*{7c3c07e6-5101-4a11-9482-7265b5a8433a}*SharedItemsImports = 5
 	EndGlobalSection
 EndGlobal

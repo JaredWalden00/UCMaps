@@ -19,4 +19,6 @@
     <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.3.0" />
   </ItemGroup>
 
+  <Import Project="..\..\UCMapsShared\UCMapsShared.projitems" Label="Shared" />
+
 </Project>

@@ -1,0 +1,22 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <MSBuildAllProjects Condition="'$(MSBuildVersion)' == '' Or '$(MSBuildVersion)' &lt; '16.0'">$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
+    <HasSharedItems>true</HasSharedItems>
+    <SharedGUID>11fecb1a-aa96-43bd-9b59-6a4ee2cf0b93</SharedGUID>
+  </PropertyGroup>
+  <PropertyGroup Label="Configuration">
+    <Import_RootNamespace>UCMapsShared</Import_RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="$(MSBuildThisFileDirectory)Models\Coordinates.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Models\DTO\UpdateMarkerDto.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Models\DTO\UserLoginDto.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Models\DTO\UserRegisterDto.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Models\ServiceResponse.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Models\UCMarker.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Models\UCMarkerLabel.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Models\UserSession.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Models\Vote.cs" />
+  </ItemGroup>
+</Project>

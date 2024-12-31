@@ -1,13 +1,11 @@
 ﻿using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.JSInterop;
-using System.Net.NetworkInformation;
 using System.Security.Claims;
 using System.Text.Json;
 using System.Threading.Tasks;
 using UCMapsShared.Models;
-using UCMapsShared.Models.DTO;
 
-namespace UCMapsWeb
+namespace UCMapsWeb.Client
 {
     public class CustomAuthStateProvider : AuthenticationStateProvider
     {
