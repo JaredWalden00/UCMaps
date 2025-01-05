@@ -54,7 +54,7 @@ else
     public async Task<ServiceResponse<string>> HandleLogin()
     {
         var userLoginDto = new UserLoginDto { Username = username, Password = password };
-        var response = await httpClient.PostAsJsonAsync("http://localhost:5078/Auth/Login", userLoginDto);
+        var response = await httpClient.PostAsJsonAsync("http://ucmaps-hghscmf9eshyfhft.canadacentral-01.azurewebsites.net/Auth/Login", userLoginDto);
         var content = await response.Content.ReadAsStringAsync();
         var serviceResponse = JsonConvert.DeserializeObject<ServiceResponse<string>>(content);
 
@@ -79,7 +79,7 @@ else
     public async Task<ServiceResponse<string>> HandleRegister()
     {
         var userRegisterDto = new UserRegisterDto { Username = username, Email = email, Password = password };
-        var response = await httpClient.PostAsJsonAsync("http://localhost:5078/Auth/Register", userRegisterDto);
+        var response = await httpClient.PostAsJsonAsync("http://ucmaps-hghscmf9eshyfhft.canadacentral-01.azurewebsites.net/Auth/Register", userRegisterDto);
         var content = await response.Content.ReadAsStringAsync();
         var serviceResponse = JsonConvert.DeserializeObject<ServiceResponse<string>>(content);
 
