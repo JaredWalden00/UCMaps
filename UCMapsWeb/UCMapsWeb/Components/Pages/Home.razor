@@ -9,11 +9,27 @@
 @using UCMapsWeb.Components.Map
 @using Newtonsoft.Json.Linq
 @using UCMapsWeb.Components.Profile
-@using UCMapsWeb.Models
+@using UCMapsShared.Models
 @inject UCMapsWeb.Services.Marker.IMarkerService MarkerService
 @inject Darnton.Blazor.DeviceInterop.Geolocation.IGeolocationService GeolocationService
 @using Darnton.Blazor.DeviceInterop.Geolocation;
 @inject IJSRuntime JS
+
+<style>
+    .bottom-left-button2 {
+        position: fixed;
+        bottom: 20px; /* Position it 20px from the bottom */
+        left: 10px; /* Position it 20px from the left */
+        width: 50px; /* Set width */
+        height: 50px; /* Set height to be equal to width */
+        background-color: #007bff;
+        color: white;
+        border: none;
+        border-radius: 50%; /* Make it a perfect circle */
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }</style>
 
 <body>
     @*     <div style="width: 100%; height: 100%;" @onclick="ToggleMarkerComponent"> *@
@@ -39,13 +55,17 @@
 
     <!-- Button container -->
     <!-- Use a conditional to show the input field only when adding a marker -->
-    <div class="add-marker-component plus-icon-container @($"{(showLabelInput ? "hide" : "side")}")" @onclick="ShowAddMarkerComponent">
+    @* <div class="add-marker-component plus-icon-container @($"{(showLabelInput ? "hide" : "side")}")" @onclick="ShowAddMarkerComponent">
         <i class="bi bi-plus"></i>
-    </div>
+    </div> *@
 
     <Recenter OnClick="resetUserInteraction" />
-
-
+    <Dropdown Style="position:fixed; bottom:20px; left:20px;" Color="DropdownColor.Primary">
+        <DropdownToggleButton>Pick Campus</DropdownToggleButton>
+        <DropdownMenu>
+            <DropdownItem Type="DropdownItemType.Button" @onclick="GotoUCCampus">University of Cincinnati</DropdownItem>
+        </DropdownMenu>
+    </Dropdown>
     @*  <div class="add-marker-container @($"{(showLabelInput ? "show" : "hide")}")">
     <div class="add-marker-content">
     <AddMarkerComponent ShowInput="@showLabelInput" OnConfirm="AddMarker"></AddMarkerComponent>
@@ -279,6 +299,16 @@
             {
                 Lat = coords.Position.Coords.Latitude,
                 Lng = coords.Position.Coords.Longitude
+            });
+    }
+    
+    private async Task GotoUCCampus()
+    {
+        isUserInteractingWithMap = true;
+        await map1.InteropObject.SetCenter(new LatLngLiteral()
+            {
+                Lat = 39.132420,
+                Lng = -84.517601
             });
     }
 

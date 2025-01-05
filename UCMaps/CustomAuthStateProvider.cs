@@ -75,6 +75,7 @@ namespace UCMaps
 
             NotifyAuthenticationStateChanged(Task.FromResult(new AuthenticationState(claimsPrincipal)));
         }
+
     }
 
 

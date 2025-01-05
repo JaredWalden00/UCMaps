@@ -71,20 +71,24 @@ else
 
     private async Task VoteAsync(bool isStillThere)
     {
-        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
-        var user = authState.User;
-
-        if (user.Identity.IsAuthenticated)
-        {
+        var customAuthStateProvider = (CustomAuthStateProvider)AuthenticationStateProvider;
+        var userId = await customAuthStateProvider.GetUserIdAsync();
+        if (userId.HasValue){
             var httpClient = HttpClientFactory.CreateClient("api");
 
-            var response = await httpClient.PostAsJsonAsync($"api/Marker/{Marker.Id}/vote", isStillThere);
+            var response = await httpClient.PostAsJsonAsync($"api/Marker/{Marker.Id}/{userId}/vote", isStillThere);
 
             if (response.IsSuccessStatusCode)
             {
                 var responseData = await response.Content.ReadFromJsonAsync<UCMarker>();
                 Marker = responseData;
                 hasVoted = true; // Update the flag to hide buttons
+                if (isStillThere){
+                    Marker.StillThereCount++;
+                }
+                else{
+                    Marker.NotThereCount++;
+                }
             }
             else
             {

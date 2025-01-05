@@ -74,5 +74,34 @@ namespace UCMapsWeb
 
             NotifyAuthenticationStateChanged(Task.FromResult(new AuthenticationState(claimsPrincipal)));
         }
+
+
+
+        public async Task<int?> GetUserIdAsync()
+        {
+            try
+            {
+                // Retrieve the user session from localStorage
+                string userSessionJson = await _jsRuntime.InvokeAsync<string>("localStorage.getItem", "UserSession");
+
+                if (!string.IsNullOrEmpty(userSessionJson))
+                {
+                    var userSession = JsonSerializer.Deserialize<UserSession>(userSessionJson);
+
+                    // Return the user ID if the session exists
+                    if (userSession != null)
+                    {
+                        return userSession.Id;
+                    }
+                }
+            }
+            catch
+            {
+                // Handle any errors, e.g., logging
+            }
+
+            return null; // Return null if no session or ID is found
+        }
+
     }
 }
