@@ -1,12 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace UCMapsShared.Models.DTO
+﻿namespace UCMapsShared.Models.DTO
 {
-    public class UpdateMarkerDto
+    public class PostMarkerDto
     {
         public int Id { get; set; }
         public string Name { get; set; }
@@ -14,5 +8,7 @@ namespace UCMapsShared.Models.DTO
         public double Lat { get; set; }
         public double Lng { get; set; }
         public int UserId { get; set; }
+        public int StillThereCount { get; set; } = 0;
+        public int NotThereCount { get; set; } = 0;
     }
 }

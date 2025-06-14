@@ -10,7 +10,6 @@ using GoogleMapsComponents.Maps;
 using UCMapsShared.Models;
 using UCMapsShared.Models.DTO;
 
-
 namespace UCMapsWeb.Services.Marker
 {
     public class MarkerService : IMarkerService
@@ -47,22 +46,65 @@ namespace UCMapsWeb.Services.Marker
         public async Task<UCMarker> AddMarkerAsync(UCMarker newMarker)
         {
             var httpClient = _httpClientFactory.CreateClient("api");
-            var response = await httpClient.PostAsJsonAsync("api/Marker", newMarker);
-            response.EnsureSuccessStatusCode();
-            return await response.Content.ReadFromJsonAsync<UCMarker>();
+            var customAuthStateProvider = (CustomAuthStateProvider)_authenticationStateProvider;
+
+            // Await the GetUserIdAsync method to get the user ID
+            int? userId = await customAuthStateProvider.GetUserIdAsync();
+
+            if (userId == null)
+            {
+                // Handle the case where the user ID is not found, e.g., throw an exception or return an error
+                throw new UnauthorizedAccessException("User ID not found.");
+            }
+
+            var marker = new PostMarkerDto
+            {
+                Name = newMarker.Name,
+                Description = newMarker.Description ?? "",
+                Lat = newMarker.Lat,
+                Lng = newMarker.Lng,
+                StillThereCount = 0,
+                NotThereCount = 0,
+                UserId = userId.Value // Access the value of the nullable userId
+            };
+
+            // Make the HTTP POST request to add the marker, and handle the response accordingly
+            var response = await httpClient.PostAsJsonAsync("api/Marker", marker);
+
+            if (response.IsSuccessStatusCode)
+            {
+                var addedMarker = await response.Content.ReadFromJsonAsync<UCMarker>();
+                return addedMarker;
+            }
+            else
+            {
+                // Handle error response
+                throw new Exception("Failed to add marker.");
+            }
         }
+
 
         public async Task UpdateMarkerAsync(UCMarker marker)
         {
+            var httpClient = _httpClientFactory.CreateClient("api");
+            var customAuthStateProvider = (CustomAuthStateProvider)_authenticationStateProvider;
+            int? userId = await customAuthStateProvider.GetUserIdAsync();
+
+            if (userId == null)
+            {
+                // Handle the case where the user ID is not found, e.g., throw an exception or return an error
+                throw new UnauthorizedAccessException("User ID not found.");
+            }
             var updateMarker = new UpdateMarkerDto
             {
                 Id = marker.Id,
                 Name = marker.Name,
-                Description = marker.Description,
+                Description = marker.Description ?? "",
                 Lat = marker.Lat,
-                Lng = marker.Lng
+                Lng = marker.Lng,
+                UserId = userId.Value // Access the value of the nullable userId
+
             };
-            var httpClient = _httpClientFactory.CreateClient("api");
                 var response = await httpClient.PutAsJsonAsync("api/Marker", updateMarker);
                 response.EnsureSuccessStatusCode();
         }

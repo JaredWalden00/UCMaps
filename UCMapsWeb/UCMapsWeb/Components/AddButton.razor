@@ -1,0 +1,54 @@
+﻿@inject AuthenticationStateProvider _authenticationStateProvider
+@using System.Security.Claims
+
+<style>
+    .top-right-button {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    width: 50px; /* Set width */
+    height: 50px; /* Set height to be equal to width */
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 50%; /* Make it a perfect circle */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    }
+</style>
+@if (IsAdmin)
+{
+    <button class="top-right-button" @onclick="OnClick">
+        <i class="bi bi-plus"></i>
+    </button>
+}
+
+@code {
+    [Parameter]
+    public EventCallback OnClick { get; set; }
+    public Boolean IsAdmin { get; set; }
+
+    protected override async Task OnInitializedAsync(){
+        var authState = await _authenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        if (user.Identity.IsAuthenticated)
+        {
+            // Find the claim and attempt to parse its value into a boolean
+            var isAdminClaim = user.FindFirst(c => c.Type == ClaimTypes.Actor)?.Value;
+
+            if (!string.IsNullOrEmpty(isAdminClaim) && bool.TryParse(isAdminClaim, out var isAdmin))
+            {
+                IsAdmin = isAdmin;
+            }
+            else
+            {
+                IsAdmin = false; // Default to false if claim is missing or invalid
+            }
+        }
+        else
+        {
+        }
+    }
+}

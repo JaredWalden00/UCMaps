@@ -23,8 +23,8 @@ builder.Services.AddScoped<CustomAuthStateProvider>();
 builder.Services.AddScoped<IGeolocationService, GeolocationService>();
 
 string apiBaseAddress;
-apiBaseAddress = "https://ucmaps-hghscmf9eshyfhft.canadacentral-01.azurewebsites.net";
-//apiBaseAddress = "https://localhost:7165"; // Use localhost for other platforms
+//apiBaseAddress = "https://ucmaps-hghscmf9eshyfhft.canadacentral-01.azurewebsites.net";
+apiBaseAddress = "https://localhost:7165"; // Use localhost for other platforms
 
 builder.Services.AddHttpClient("api", httpClient =>
 {

@@ -9,8 +9,10 @@
 @using UCMapsShared.Models.DTO
 @using System.Security.Claims
 
-@if(!register){
-<h3>Login</h3>
+
+@if (!register)
+{
+    <h3>Login</h3>
 
     <div class="row">
         <label for="username">Name</label>
@@ -20,8 +22,13 @@
         <label for="password">Password</label>
         <InputText id="password" @bind-Value="password" type="password" />
     </div>
-    <button clas="btn btn-primary" @onclick="HandleLogin">Login</button>
+    <button class="btn btn-primary" @onclick="HandleLogin">Login</button>
     <button class="btn btn-primary" @onclick="registerBool">Create new user</button>
+
+    @if (!string.IsNullOrEmpty(loginErrorMessage))
+    {
+        <div class="alert alert-danger mt-2">@loginErrorMessage</div>
+    }
 }
 else
 {
@@ -39,13 +46,20 @@ else
         <InputText id="password" @bind-Value="password" type="password" />
     </div>
     <button class="btn btn-primary" @onclick="HandleRegister">Register</button>
+    @if (!string.IsNullOrEmpty(registerErrorMessage))
+    {
+        <div class="alert alert-danger mt-2">@registerErrorMessage</div>
+    }
 }
+
 
 @code {
     private UserLoginDto user = new UserLoginDto();
     private string username { get; set; } = string.Empty;
     private string password { get; set; } = string.Empty;
     private string email { get; set; } = string.Empty;
+    private string loginErrorMessage { get; set; } = string.Empty; // Error message for login
+    private string registerErrorMessage { get; set; } = string.Empty; // Error message for login
     [Parameter]
     public EventCallback OnLoginSuccess { get; set; }
 
@@ -53,7 +67,10 @@ else
 
     public async Task<ServiceResponse<string>> HandleLogin()
     {
+        loginErrorMessage = string.Empty; // Clear previous error message
+
         var userLoginDto = new UserLoginDto { Username = username, Password = password };
+        // var response = await httpClient.PostAsJsonAsync("https://localhost:7165/Auth/Login", userLoginDto);
         var response = await httpClient.PostAsJsonAsync("https://ucmaps-hghscmf9eshyfhft.canadacentral-01.azurewebsites.net/Auth/Login", userLoginDto);
         var content = await response.Content.ReadAsStringAsync();
         var serviceResponse = JsonConvert.DeserializeObject<ServiceResponse<string>>(content);
@@ -65,6 +82,10 @@ else
             var customAuthStateProvider = (CustomAuthStateProvider)authStateProvider;
             await customAuthStateProvider.UpdateAuthenticationState(getUserSession);
             await OnLoginSuccess.InvokeAsync();
+        }
+        else
+        {
+            loginErrorMessage = serviceResponse.Message ?? "Login failed. Please try again.";
         }
 
         return serviceResponse;
@@ -80,6 +101,7 @@ else
     {
         var userRegisterDto = new UserRegisterDto { Username = username, Email = email, Password = password };
         var response = await httpClient.PostAsJsonAsync("https://ucmaps-hghscmf9eshyfhft.canadacentral-01.azurewebsites.net/Auth/Register", userRegisterDto);
+        // var response = await httpClient.PostAsJsonAsync("https://ucmaps-hghscmf9eshyfhft.canadacentral-01.azurewebsites.net/Auth/Register", userRegisterDto);
         var content = await response.Content.ReadAsStringAsync();
         var serviceResponse = JsonConvert.DeserializeObject<ServiceResponse<string>>(content);
 
@@ -87,7 +109,10 @@ else
         {
             await HandleLogin();
         }
-
+        else
+        {
+            registerErrorMessage = serviceResponse.Message ?? "Register failed. Please try again.";
+        }
         return serviceResponse;
     }
 
@@ -103,6 +128,7 @@ else
         // var fart = keyValuePairs.Select(kvp => new Claim(kvp.Key, kvp.Value.ToString()));
         var usernameClaim = claims.FirstOrDefault(_ => _.Type == "unique_name") ?? claims.FirstOrDefault(_ => _.Type == ClaimTypes.Name);
         var nameIdClaim = claims.FirstOrDefault(_ => _.Type == "nameid");
+        var isAdminClaim = claims.FirstOrDefault(_ => _.Type == "actort");
 
         if (usernameClaim == null)
         {
@@ -112,8 +138,17 @@ else
         {
             throw new Exception("NameID claim not found");
         }
+        if (isAdminClaim == null)
+        {
+            throw new Exception("NameID claim not found");
+        }
 
         if (!int.TryParse(nameIdClaim.Value, out int userId))
+        {
+            throw new Exception("Invalid NameID claim value");
+        }
+        
+        if (!bool.TryParse(isAdminClaim.Value, out bool isAdmin))
         {
             throw new Exception("Invalid NameID claim value");
         }
@@ -122,7 +157,8 @@ else
             {
                 Username = usernameClaim.Value,
                 Id = userId,
-                Token = token
+                Token = token,
+                IsAdmin = isAdmin
             };
 
     }

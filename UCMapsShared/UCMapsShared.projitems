@@ -10,6 +10,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="$(MSBuildThisFileDirectory)Models\Coordinates.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Models\DTO\PostMarkerDto.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Models\DTO\UpdateMarkerDto.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Models\DTO\UserLoginDto.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Models\DTO\UserRegisterDto.cs" />

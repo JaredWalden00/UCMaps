@@ -34,7 +34,8 @@ namespace UCMapsWeb
                 {
                     new Claim(ClaimTypes.Name, userSession.Username),
                     new Claim("access_token", userSession.Token),
-                    new Claim(ClaimTypes.NameIdentifier, userSession.Id.ToString())
+                    new Claim(ClaimTypes.NameIdentifier, userSession.Id.ToString()),
+                    new Claim(ClaimTypes.Actor, userSession.IsAdmin.ToString())
                 };
 
                 var claimsPrincipal = new ClaimsPrincipal(new ClaimsIdentity(claims, "CustomAuth"));
@@ -60,7 +61,8 @@ namespace UCMapsWeb
                 {
                     new Claim(ClaimTypes.Name, userSession.Username),
                     new Claim("access_token", userSession.Token),
-                    new Claim(ClaimTypes.NameIdentifier, userSession.Id.ToString())
+                    new Claim(ClaimTypes.NameIdentifier, userSession.Id.ToString()),
+                    new Claim(ClaimTypes.Actor, userSession.IsAdmin.ToString())
                 };
 
                 claimsPrincipal = new ClaimsPrincipal(new ClaimsIdentity(claims, "CustomAuth"));

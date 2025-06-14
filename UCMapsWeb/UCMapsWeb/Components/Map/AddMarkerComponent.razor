@@ -1,4 +1,5 @@
-﻿<div class="row">
+﻿
+<div class="row">
     <input type="text" class="form-control mb-2" @bind="Label" placeholder="Enter label">
     <input type="text" class="form-control mb-2" @bind="Desc" placeholder="Enter Description">
 </div>
@@ -7,17 +8,15 @@
 </div>
 
 @code {
-    [Parameter]
-    public bool ShowInput { get; set; }
+    [Parameter] public EventCallback<Tuple<string, string>> OnDataSent { get; set; }
 
-    [Parameter]
-    public EventCallback<Tuple<string, string>> OnDataSent { get; set; }
-
-    public string Label { get; set; }
-    public string Desc { get; set; }
+    private string Label { get; set; }
+    private string Desc { get; set; }
 
     private async Task Confirm()
     {
+        // Invoke the callback when data is ready
         await OnDataSent.InvokeAsync(new Tuple<string, string>(Label, Desc));
     }
 }
+
